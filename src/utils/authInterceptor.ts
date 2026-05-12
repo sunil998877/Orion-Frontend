@@ -1,6 +1,7 @@
 import { toast } from 'react-toastify';
+import { ORIGIN } from './api';
 
-const API_BASE = 'http://localhost:3000';
+const API_ORIGIN = ORIGIN || 'http://localhost:3000';
 
 function handleAuthError() {
   localStorage.removeItem('token');
@@ -16,7 +17,7 @@ export function setupAuthInterceptor() {
   const originalFetch = window.fetch;
   window.fetch = async function (input: RequestInfo | URL, init?: RequestInit) {
     const url = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url;
-    const isOurApi = url.includes(API_BASE) || url.includes('/api/');
+    const isOurApi = url.includes(API_ORIGIN) || url.includes('/api/');
 
     const response = await originalFetch.call(window, input, init);
 

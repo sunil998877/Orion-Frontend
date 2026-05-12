@@ -4,20 +4,41 @@ import { Link } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
 import AvatarCropModal from "../components/AvatarCropModal";
 import Logo from "../components/Logo";
+import { API_BASE } from '../utils/api';
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [userInfo, setUserInfo] = useState<{ username: string; email: string } | null>(() => {
+    const username = localStorage.getItem('username');
+    const email = localStorage.getItem('email');
+    return username && email ? { username, email } : null;
+  });
   const [avatarModalOpen, setAvatarModalOpen] = useState(false);
   const [avatarDropdownOpen, setAvatarDropdownOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
   const [notifications, setNotifications] = useState<any[]>([]);
 
+  const avatarDropdownRef = React.useRef<HTMLDivElement>(null);
+  const notifDropdownRef = React.useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (avatarDropdownRef.current && !avatarDropdownRef.current.contains(event.target as Node)) {
+        setAvatarDropdownOpen(false);
+      }
+      if (notifDropdownRef.current && !notifDropdownRef.current.contains(event.target as Node)) {
+        setNotifOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
   const fetchNotifications = async () => {
     try {
       const token = localStorage.getItem('token');
       if (!token) return;
-      const res = await fetch('http://localhost:3000/api/auth/notifications', {
+      const res = await fetch(`${API_BASE}/notifications`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (res.ok) {
@@ -31,7 +52,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     try {
       const token = localStorage.getItem('token');
       if (!token) return;
-      await fetch('http://localhost:3000/api/auth/notifications/read', {
+      await fetch(`${API_BASE}/notifications/read`, {
         method: 'PUT',
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -43,7 +64,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     try {
       const token = localStorage.getItem('token');
       if (!token) return;
-      await fetch('http://localhost:3000/api/auth/notifications', {
+      await fetch(`${API_BASE}/notifications`, {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -69,11 +90,12 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       const token = localStorage.getItem('token');
       if (!token) return;
       try {
-        const res = await fetch('http://localhost:3000/api/auth/user', {
+        const res = await fetch(`${API_BASE}/user`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         if (res.ok) {
           const user = await res.json();
+          setUserInfo({ username: user.username, email: user.email });
           if (user.avatar) {
             setAvatarUrl(user.avatar);
             localStorage.setItem('avatar', user.avatar);
@@ -95,7 +117,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch('http://localhost:3000/api/auth/profile/avatar', {
+      const res = await fetch(`${API_BASE}/profile/avatar`, {
         method: 'POST',
         headers: { Authorization: `Bearer ${token}` },
         body: formData
@@ -117,6 +139,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     localStorage.removeItem('courseStatus');
     localStorage.removeItem('avatar');
     localStorage.removeItem('username');
+    localStorage.removeItem('email');
     navigate('/login');
   };
 
@@ -145,16 +168,59 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             </div>
           </div>
           <div className="flex items-center gap-3">
-            <button
-              className="p-2 rounded-full bg-white/5 border border-white/10 hover:bg-white/10 transition relative"
-              onClick={() => { setNotifOpen(v => !v); if (!notifOpen) fetchNotifications(); }}
-            >
-              <Bell className="w-5 h-5 text-white/70" />
-              {notifications.some(n => !n.isRead) && (
-                <span className="absolute top-1 right-2 w-2 h-2 bg-lime-500 rounded-full animate-pulse" />
-              )}
-            </button>
-            <div className="relative">
+              <div className="relative" ref={notifDropdownRef}>
+                <button
+                  className="p-2 rounded-full bg-white/5 border border-white/10 hover:bg-white/10 transition relative"
+                  onClick={() => { setNotifOpen(v => !v); if (!notifOpen) fetchNotifications(); }}
+                >
+                  <Bell className="w-5 h-5 text-white/70" />
+                  {notifications.some(n => !n.isRead) && (
+                    <span className="absolute top-1 right-2 w-2 h-2 bg-lime-500 rounded-full animate-pulse" />
+                  )}
+                </button>
+
+                {notifOpen && (
+                  <div className="absolute top-full right-0 mt-2 z-50 w-80 bg-white/10 border border-white/20 backdrop-blur-md rounded-xl shadow-xl overflow-hidden">
+                    <div className="px-4 py-3 border-b border-white/10 flex items-center justify-between">
+                      <span className="text-sm text-white/80">Notifications</span>
+                      <div className="flex gap-2">
+                        <button
+                          className="text-xs px-2 py-1 rounded bg-lime-500/20 text-lime-300 hover:bg-lime-500/30 transition"
+                          onClick={(e) => { e.stopPropagation(); markAllRead(); }}
+                        >
+                          Mark all read
+                        </button>
+                        <button
+                          className="text-xs px-2 py-1 rounded bg-red-500/20 text-red-300 hover:bg-red-500/30 transition"
+                          onClick={(e) => { e.stopPropagation(); removeAllNotifications(); }}
+                        >
+                          Remove all
+                        </button>
+                      </div>
+                    </div>
+                    <div className="max-h-64 overflow-auto">
+                      {notifications.length === 0 ? (
+                        <div className="px-4 py-6 text-center text-white/60 text-sm">No notifications</div>
+                      ) : (
+                        notifications.map((n, i) => (
+                          <div key={i} className={`px-4 py-3 border-b border-white/5 hover:bg-white/5 transition flex items-start gap-3 ${!n.isRead ? 'bg-white/[0.02]' : ''}`}>
+                            <div className={`mt-1.5 w-2 h-2 rounded-full shrink-0 ${!n.isRead ? 'bg-lime-500' : 'bg-transparent'
+                              }`} />
+                            <div className="flex-1">
+                              <div className="text-sm text-white font-medium">{n.title}</div>
+                              <div className="text-xs text-white/60 mt-0.5 line-clamp-2">{n.message}</div>
+                              <div className="text-[10px] text-white/40 mt-1">
+                                {new Date(n.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                              </div>
+                            </div>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            <div className="relative" ref={avatarDropdownRef}>
               <button
                 className="rounded-full focus:outline-none transition-transform active:scale-95"
                 onClick={() => setAvatarDropdownOpen(!avatarDropdownOpen)}
@@ -169,78 +235,29 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
               </button>
 
               {avatarDropdownOpen && (
-                <>
-                  <div className="fixed inset-0 z-40" onClick={() => setAvatarDropdownOpen(false)} />
-                  <div className="absolute right-0 mt-2 w-48 bg-[#1a1f2e] border border-white/10 rounded-xl shadow-xl z-50 overflow-hidden">
-                    <div className="py-1">
-                      <button
-                        onClick={() => {
-                          setAvatarModalOpen(true);
-                          setAvatarDropdownOpen(false);
-                        }}
-                        className="w-full px-4 py-2 text-sm text-left text-white/80 hover:bg-white/5 hover:text-white flex items-center gap-2 transition-colors"
-                      >
-                        <Camera className="w-4 h-4" />
-                        Change Avatar
-                      </button>
-                      <button
-                        onClick={handleLogout}
-                        className="w-full px-4 py-2 text-sm text-left text-red-400 hover:bg-red-500/10 flex items-center gap-2 transition-colors"
-                      >
-                        <LogOut className="w-4 h-4" />
-                        Logout
-                      </button>
+                <div className="absolute top-full right-0 mt-2 z-50 w-64 bg-[#1a1f2e] border border-white/10 rounded-2xl shadow-2xl overflow-hidden animate-fadeInUp">
+                  <div className="p-4 border-b border-white/5 bg-white/[0.02]">
+                    <div className="flex flex-col gap-1">
+                      <span className="text-sm font-bold text-white truncate">{userInfo?.username || 'User'}</span>
+                      <span className="text-[10px] text-white/40 font-medium truncate uppercase tracking-widest">{userInfo?.email || 'email@example.com'}</span>
                     </div>
                   </div>
-                </>
+                  <div className="py-1">
+                    <button
+                      onClick={(e) => { e.stopPropagation(); handleLogout(); }}
+                      className="w-full px-4 py-3 text-sm text-left text-red-400 hover:bg-red-500/10 flex items-center gap-3 transition-all font-bold"
+                    >
+                      <LogOut className="w-4 h-4" />
+                      Logout Account
+                    </button>
+                  </div>
+                </div>
               )}
             </div>
           </div>
         </div>
       </header>
-      {notifOpen && (
-        <>
-          <div className="fixed inset-0 z-40" onClick={() => setNotifOpen(false)} />
-          <div className="fixed top-16 right-6 z-50 w-80 bg-white/10 border border-white/20 backdrop-blur-md rounded-xl shadow-xl">
-            <div className="px-4 py-3 border-b border-white/10 flex items-center justify-between">
-              <span className="text-sm text-white/80">Notifications</span>
-              <div className="flex gap-2">
-                <button
-                  className="text-xs px-2 py-1 rounded bg-lime-500/20 text-lime-300 hover:bg-lime-500/30 transition"
-                  onClick={markAllRead}
-                >
-                  Mark all read
-                </button>
-                <button
-                  className="text-xs px-2 py-1 rounded bg-red-500/20 text-red-300 hover:bg-red-500/30 transition"
-                  onClick={removeAllNotifications}
-                >
-                  Remove all
-                </button>
-              </div>
-            </div>
-            <div className="max-h-64 overflow-auto">
-              {notifications.length === 0 ? (
-                <div className="px-4 py-6 text-center text-white/60 text-sm">No notifications</div>
-              ) : (
-                notifications.map((n, i) => (
-                  <div key={i} className={`px-4 py-3 border-b border-white/5 hover:bg-white/5 transition flex items-start gap-3 ${!n.isRead ? 'bg-white/[0.02]' : ''}`}>
-                    <div className={`mt-1.5 w-2 h-2 rounded-full shrink-0 ${!n.isRead ? 'bg-lime-500' : 'bg-transparent'
-                      }`} />
-                    <div className="flex-1">
-                      <div className="text-sm text-white font-medium">{n.title}</div>
-                      <div className="text-xs text-white/60 mt-0.5 line-clamp-2">{n.message}</div>
-                      <div className="text-[10px] text-white/40 mt-1">
-                        {new Date(n.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                      </div>
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
-          </div>
-        </>
-      )}
+
       <div className="flex">
         <aside className="w-64 bg-white/5 backdrop-blur-md border-r border-white/10">
           <div className="w-full">

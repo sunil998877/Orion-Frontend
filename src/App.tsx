@@ -1,11 +1,12 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { AnimatePresence } from 'framer-motion';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import LoginPage from './pages/LoginPage';
 import RegistrationPage from './pages/RegistrationPage';
 import { HeroPage } from './pages/HeroPage';
-import { CourseDataProvider } from './contextAPI/courseAPI';
+import { CourseDataProvider } from './contextAPI/courseAPI.tsx';
 import CourseCreatorForm from './components/CourseCreatorForm';
 import AppLayout from './layout/AppLayout';
 import AnalyticsPage from './pages/AnalyticsPage';
@@ -17,31 +18,54 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   return <>{children}</>;
 };
 
+const AnimatedRoutes = () => {
+  const location = useLocation();
+  
+  // Routes that should NOT have the AppLayout wrapper (like Login/Register)
+  const isAuthPage = ['/', '/login', '/register', '/registration', '/create-course', '/course-basic-info'].includes(location.pathname);
+
+  const routes = (
+    <AnimatePresence mode="wait">
+      <Routes location={location} key={location.pathname}>
+        <Route path="/" element={<LoginPage />} />
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/register" element={<RegistrationPage />} />
+        <Route path="/registration" element={<RegistrationPage />} />
+        
+        {/* Pages with Persistent Layout */}
+        <Route path="/course-creator" element={<ProtectedRoute><HomePage /></ProtectedRoute>} />
+        <Route path="/course-details" element={<ProtectedRoute><HeroPage /></ProtectedRoute>} />
+        <Route path="/dashboard" element={<ProtectedRoute><HeroPage /></ProtectedRoute>} />
+        <Route path="/course-dashboard" element={<ProtectedRoute><HeroPage /></ProtectedRoute>} />
+        <Route path="/analytics" element={<ProtectedRoute><AnalyticsPage /></ProtectedRoute>} />
+        
+        {/* Full Screen Pages */}
+        <Route path="/create-course" element={<ProtectedRoute><CourseCreatorForm /></ProtectedRoute>} />
+        <Route path="/course-basic-info" element={<ProtectedRoute><CourseCreatorForm /></ProtectedRoute>} />
+        
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </AnimatePresence>
+  );
+
+  if (isAuthPage) {
+    return routes;
+  }
+
+  return <AppLayout>{routes}</AppLayout>;
+};
+
 const App: React.FC = () => {
   React.useEffect(() => {
-    // Cleanup legacy local storage keys
     localStorage.removeItem('currentCourseId');
     localStorage.removeItem('courseStatus');
   }, []);
 
   return (
     <CourseDataProvider>
-      <ToastContainer position="top-right" autoClose={5000} theme="dark" />
+      <ToastContainer position="top-right" autoClose={3000} limit={3} theme="dark" />
       <Router>
-        <Routes>
-          <Route path="/" element={<LoginPage />} />
-          <Route path="/login" element={<LoginPage />} />
-          <Route path="/register" element={<RegistrationPage />} />
-          <Route path="/registration" element={<RegistrationPage />} />
-          <Route path="/course-creator" element={<ProtectedRoute><AppLayout><HomePage /></AppLayout></ProtectedRoute>} />
-          <Route path="/create-course" element={<ProtectedRoute><CourseCreatorForm /></ProtectedRoute>} />
-          <Route path="/course-basic-info" element={<ProtectedRoute><CourseCreatorForm /></ProtectedRoute>} />
-          <Route path="/course-details" element={<ProtectedRoute><AppLayout><HeroPage /></AppLayout></ProtectedRoute>} />
-          <Route path="/dashboard" element={<ProtectedRoute><AppLayout><HeroPage /></AppLayout></ProtectedRoute>} />
-          <Route path="/course-dashboard" element={<ProtectedRoute><AppLayout><HeroPage /></AppLayout></ProtectedRoute>} />
-          <Route path="/analytics" element={<ProtectedRoute><AppLayout><AnalyticsPage /></AppLayout></ProtectedRoute>} />
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
+        <AnimatedRoutes />
       </Router>
     </CourseDataProvider>
   );

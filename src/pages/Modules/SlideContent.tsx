@@ -1,201 +1,183 @@
-import React, { useMemo } from 'react';
+import React from 'react';
 import { createPortal } from 'react-dom';
-import { BookOpen, Clock, Sparkles, CheckCircle, Loader2 } from 'lucide-react';
-import { ModuleState } from './ModuleGen';
-
-const getStringArray = (obj: unknown, key: string): string[] => {
-    const v = (obj as Record<string, unknown>)[key];
-    return Array.isArray(v) ? v.filter((x): x is string => typeof x === 'string') : [];
-};
+import { Sparkles, Loader2, Monitor } from 'lucide-react';
+import { ModuleState, cleanTitle } from './ModuleGen';
 
 interface SlideContentProps {
     moduleData: ModuleState
     onClose: () => void;
-    onRegenerate?: () => void;
-    isRegenerating?: boolean;
 }
-export const SlideContent: React.FC<SlideContentProps> = ({ moduleData, onClose, onRegenerate, isRegenerating }) => {
-    const theme = useMemo(() => {
-        const t = (localStorage.getItem('theme') || 'blue').toLowerCase();
-        const palettes: Record<string, { from: string; via: string; to: string; accent: string; accentSoft: string; textSoft: string }> = {
-            blue: { from: '#2563eb', via: '#3b82f6', to: '#4f46e5', accent: '#3b82f6', accentSoft: 'rgba(59,130,246,0.1)', textSoft: '#c7d2fe' },
-            emerald: { from: '#10b981', via: '#34d399', to: '#22c55e', accent: '#10b981', accentSoft: 'rgba(16,185,129,0.1)', textSoft: '#bbf7d0' },
-            purple: { from: '#9333ea', via: '#a855f7', to: '#7c3aed', accent: '#a855f7', accentSoft: 'rgba(168,85,247,0.1)', textSoft: '#e9d5ff' },
-            rose: { from: '#f43f5e', via: '#fb7185', to: '#e11d48', accent: '#f43f5e', accentSoft: 'rgba(244,63,94,0.1)', textSoft: '#fecdd3' },
-            indigo: { from: '#4f46e5', via: '#6366f1', to: '#4338ca', accent: '#6366f1', accentSoft: 'rgba(99,102,241,0.1)', textSoft: '#c7d2fe' },
-            lime: { from: '#84cc16', via: '#a3e635', to: '#65a30d', accent: '#84cc16', accentSoft: 'rgba(132,204,22,0.1)', textSoft: '#ecfccb' },
-        };
-        return palettes[t] || palettes.blue;
-    }, []);
-    const headerGradient = `linear-gradient(to right, #a3e635, #84cc16, #10b981, #22c55e)`;
+
+
+
+export const SlideContent: React.FC<SlideContentProps> = ({ moduleData, onClose }) => {
 
     return createPortal(
-        <div className="fixed inset-0 flex items-center justify-center z-[9999] px-4 py-4 animate-fadeIn bg-black/60 backdrop-blur-sm">
+        <div className="fixed inset-0 flex items-center justify-center z-[9999] px-4 py-4 animate-in fade-in duration-300 bg-gray-950/40 backdrop-blur-xl">
             <div
                 className="fixed inset-0 z-0 bg-transparent"
                 onClick={onClose}
             />
-            <div className="relative w-full max-w-4xl max-h-[90vh] flex flex-col bg-black rounded-3xl shadow-2xl border border-white/10 overflow-hidden text-white z-10">
+            <div className={`relative w-full ${moduleData.showOrion ? 'max-w-7xl' : 'max-w-4xl'} max-h-[96vh] flex flex-col bg-gray-900/90 rounded-3xl shadow-[0_0_50px_rgba(0,0,0,0.5)] border border-white/10 overflow-hidden text-white z-10 transition-all duration-500 animate-in zoom-in-95 fade-in duration-300 backdrop-blur-2xl`}>
 
-                {/* Decorative Corner Elements */}
-                <div className="absolute top-0 left-0 w-20 h-20 rounded-br-3xl" style={{ backgroundImage: `linear-gradient(to bottom right, ${theme.accentSoft}, transparent)` }}></div>
-                <div className="absolute top-0 right-0 w-20 h-20 rounded-bl-3xl" style={{ backgroundImage: `linear-gradient(to bottom left, ${theme.accentSoft}, transparent)` }}></div>
+                {/* Decorative Corner Glow */}
+                <div className="absolute -top-20 -left-20 w-64 h-64 bg-lime-500/10 rounded-full blur-[80px] pointer-events-none" />
+                <div className="absolute -bottom-20 -right-20 w-64 h-64 bg-emerald-500/10 rounded-full blur-[80px] pointer-events-none" />
 
-                {/* Enhanced Header with Motion */}
-                <div className="relative text-white p-8 overflow-hidden shrink-0" style={{ backgroundImage: headerGradient }}>
-                    {/* Animated Background Pattern */}
-                    <div className="absolute inset-0 opacity-20" />
-
+                {/* Integrated Header */}
+                <div className="relative px-8 py-10 shrink-0 border-b border-white/5 bg-white/[0.02]">
                     <div className="relative flex items-center justify-between">
                         <div className="flex items-center space-x-6">
-                            <div className="relative p-4 rounded-2xl backdrop-blur-sm animate-pulse-subtle border" style={{ background: theme.accentSoft, borderColor: theme.accentSoft }}>
-                                <BookOpen className="w-10 h-10 text-white" />
-                                <div className="absolute -top-1 -right-1 w-4 h-4 rounded-full animate-ping" style={{ backgroundColor: theme.accent }}></div>
+                            <div className="relative p-5 rounded-2xl bg-lime-500/10 border border-lime-500/20 group animate-in slide-in-from-left duration-500">
+                                <Monitor className="w-10 h-10 text-lime-400 group-hover:scale-110 transition-transform duration-300" />
+                                <div className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-lime-500 animate-pulse shadow-[0_0_10px_rgba(132,204,22,0.5)]" />
                             </div>
                             <div>
-                                <h2 className="text-4xl font-bold mb-2 animate-slideInLeft text-white" style={{ textShadow: '0 1px 2px rgba(0,0,0,0.4)' }}>
-                                    View Slides
+                                <div className="flex items-center gap-2 mb-1 animate-in slide-in-from-left duration-500 delay-100">
+                                    <span className="text-[10px] font-black uppercase tracking-[0.3em] text-lime-500/60">Module Presentation</span>
+                                    <div className="h-px w-8 bg-lime-500/30" />
+                                </div>
+                                <h2 className="text-4xl font-black tracking-tight text-white mb-2 animate-in slide-in-from-left duration-500 delay-200">
+                                    {moduleData.showOrion ? 'Orion Slide Deck' : 'Visual Storyboard'}
                                 </h2>
-                                <p className="flex items-center text-lg animate-slideInLeft animation-delay-100 text-white" style={{ textShadow: '0 1px 2px rgba(0,0,0,0.4)' }}>
-                                    <Sparkles className="w-5 h-5 mr-2 animate-spin-slow" style={{ color: '#ffffff' }} />
-                                    Interactive Learning Experience
-                                </p>
+                                <div className="flex items-center gap-3 text-gray-400 animate-in slide-in-from-left duration-500 delay-300">
+                                    <Sparkles className="w-4 h-4 text-lime-400" />
+                                    <span className="text-sm font-medium italic">{cleanTitle(moduleData.Content?.Title || moduleData.Module)}</span>
+                                </div>
                             </div>
                         </div>
-                        <div className="flex items-center gap-4">
-                            {onRegenerate && (
-                                <button
-                                    onClick={onRegenerate}
-                                    disabled={isRegenerating}
-                                    className="flex items-center px-4 py-2 rounded-xl transition-all duration-200 font-medium border disabled:opacity-50 disabled:cursor-not-allowed"
-                                    style={{
-                                        borderColor: theme.accentSoft,
-                                        background: 'rgba(255,255,255,0.1)',
-                                        color: 'white'
-                                    }}
-                                >
-                                    {isRegenerating ? (
-                                        <>
-                                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                                            Regenerating...
-                                        </>
-                                    ) : (
-                                        <>
-                                            <Sparkles className="w-4 h-4 mr-2" />
-                                            Regenerate
-                                        </>
-                                    )}
-                                </button>
-                            )}
-                            <button
-                                onClick={onClose}
-                                className="group relative p-3 rounded-2xl transition-all duration-300 transform hover:scale-110 hover:rotate-90 border"
-                                style={{ borderColor: theme.accentSoft }}
-                            >
-                                <svg className="w-7 h-7 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                                </svg>
-                                <div className="absolute inset-0 rounded-2xl scale-0 group-hover:scale-100 transition-transform duration-300" style={{ background: theme.accentSoft }}></div>
-                            </button>
-                        </div>
+
+                        <button
+                            onClick={onClose}
+                            className="group relative px-6 py-3 rounded-2xl bg-white/5 border border-white/10 hover:border-lime-500/30 hover:bg-lime-500/5 transition-all duration-300 flex items-center gap-2 animate-in slide-in-from-right duration-500"
+                        >
+                            <svg className="w-5 h-5 transition-transform duration-300 group-hover:-translate-x-1 text-lime-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                            </svg>
+                            <span className="font-black uppercase tracking-widest text-[10px] text-gray-400 group-hover:text-white transition-colors">Return to Studio</span>
+                        </button>
                     </div>
                 </div>
 
-                {/* Slides */}
-                <div className="flex-1 overflow-y-auto p-6 bg-black">
+                {/* Content Area */}
+                <div className="flex-1 overflow-y-auto p-8 custom-scrollbar bg-transparent">
                     {!(moduleData &&
                         Array.isArray(moduleData.slide?.Slides) &&
-                        moduleData.slide?.Slides.length > 0) ? (
+                        moduleData.slide?.Slides.length > 0) && !moduleData.showOrion ? (
 
-                        <div className="flex flex-col items-center Array.isArray(moduleData.slide?.[0]?.Slides)
-                            justify-center py-12">
-                            <Loader2 className="w-12 h-12 animate-spin mb-4" style={{ color: theme.accent }} />
-                            <h3 className="text-xl font-semibold text-gray-700 mb-2">Generating Slides...</h3>
-                            <p className="text-gray-500 text-center">
-                                Our AI is creating the slide sequence for this module. This may take a few moments.
+                        <div className="flex flex-col items-center justify-center py-20 animate-in fade-in duration-700">
+                            <div className="relative">
+                                <div className="absolute inset-0 bg-lime-500/20 rounded-full blur-xl animate-pulse" />
+                                <Loader2 className="w-16 h-16 animate-spin text-lime-400 relative z-10" />
+                            </div>
+                            <h3 className="text-2xl font-black text-white mt-8 mb-3 tracking-tight">Visualizing Slides...</h3>
+                            <p className="text-gray-500 text-center max-w-sm font-medium">
+                                Our AI is orchestrating the perfect visual sequence for this curriculum.
                             </p>
                         </div>
                     ) : (
-                        <div className="prose-invert max-w-none">
-                            <div className="mb-6 p-4 rounded-lg" style={{ background: theme.accentSoft, border: `1px solid ${theme.accentSoft}` }}>
-                                <div className="flex items-center" style={{ color: theme.accent }}>
-                                    <CheckCircle className="w-5 h-5 mr-2" />
-                                    <span className="font-medium">Slides Generated Successfully</span>
+                        <div className="animate-in fade-in slide-in-from-bottom-4 duration-700">
+                            {moduleData.showOrion && moduleData.orionUrl ? (
+                                <div className="relative w-full h-[75vh] rounded-[2rem] overflow-hidden border border-white/10 shadow-[0_30px_60px_-15px_rgba(0,0,0,0.7)] group bg-black/40 backdrop-blur-sm">
+                                    <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-transparent via-lime-500/20 to-transparent z-10" />
+                                    <iframe
+                                        src={moduleData.orionUrl.replace('/docs/', '/embed/').replace('/view/', '/embed/')}
+                                        className="absolute inset-0 w-full h-full border-0"
+                                        allowFullScreen
+                                        title="Orion Slide Deck"
+                                    />
                                 </div>
-                            </div>
-
-                            <div className="space-y-2">
-                                {/* code--------------> */}
-
-
-                                <h2 className="text-xl font-semibold">Slides</h2>
-                                <ul className="list-disc list-inside">
-                                    {Array.isArray(moduleData.slide?.Slides) && moduleData.slide?.Slides.length ? (
-                                        moduleData.slide?.Slides?.map((slide, i) => {
-                                            const slideNum = ('SlideNumber' in slide && (slide as any).SlideNumber) ? (slide as any).SlideNumber : (i + 1);
-                                            const slideTitle = (slide as any).title || (slide as any).Title || '';
-                                            const bullets = Array.isArray((slide as any).Bullets)
-                                                ? (slide as any).Bullets
-                                                : Array.isArray((slide as any).BulletPoints)
-                                                    ? (slide as any).BulletPoints
+                            ) : (
+                                <div className="space-y-12">
+                                    <div className="flex items-center gap-3 mb-8">
+                                        <div className="w-1 h-6 bg-lime-500 rounded-full" />
+                                        <h2 className="text-xl font-black uppercase tracking-widest text-white">Slide Breakdown</h2>
+                                    </div>
+                                    <div className="grid grid-cols-1 gap-8">
+                                        {Array.isArray(moduleData.slide?.Slides) && moduleData.slide?.Slides.length ? (
+                                            moduleData.slide?.Slides?.map((slide: Record<string, unknown>, i: number) => {
+                                                const slideNum = ('SlideNumber' in slide && (slide as any).SlideNumber) ? (slide as any).SlideNumber : (i + 1);
+                                                const slideTitle = (slide as any).title || (slide as any).Title || '';
+                                                const bullets = Array.isArray((slide as any).Bullets)
+                                                    ? (slide as any).Bullets
+                                                    : Array.isArray((slide as any).BulletPoints)
+                                                        ? (slide as any).BulletPoints
+                                                        : [];
+                                                const contentText = (slide as any).Content || (slide as any).content || '';
+                                                const contentLines = typeof contentText === 'string'
+                                                    ? contentText.split(/\n+|\. +/).filter(Boolean).map((l: string) => l.trim())
                                                     : [];
-                                            const contentText = (slide as any).Content || (slide as any).content || '';
-                                            const contentLines = typeof contentText === 'string'
-                                                ? contentText.split(/\n+|\. +/).filter(Boolean).map(l => l.trim())
-                                                : [];
-                                            const visualPrompt = (slide as any).VisualPrompt || (slide as any).visualPrompt || '';
-                                            return (
-                                                <li key={i} className="mb-8 p-6 rounded-2xl border border-white/5 bg-white/5 backdrop-blur-sm">
-                                                    <div className="flex items-center justify-between mb-4">
-                                                        <span className="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-white/10 text-white/70">
-                                                            Slide {slideNum}
-                                                        </span>
-                                                    </div>
-                                                    
-                                                    <div className="space-y-6">
-                                                        <div>
-                                                            <h3 className="text-xl font-bold text-white mb-3">
-                                                                {slideTitle || 'Untitled Slide'}
-                                                            </h3>
-                                                            <ul className="space-y-2">
-                                                                {bullets.map((b: string, j: number) => (
-                                                                    <li key={j} className="flex items-start">
-                                                                        <span className="mr-2 mt-1.5 w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: theme.accent }}></span>
-                                                                        <span className="text-gray-300 leading-relaxed">{b}</span>
-                                                                    </li>
-                                                                ))}
-                                                            </ul>
+                                                const visualPrompt = (slide as any).VisualPrompt || (slide as any).visualPrompt || '';
+                                                const transcriptText = (slide as any).Transcript || (slide as any).transcript || '';
+
+                                                return (
+                                                    <div key={i} className="group bg-white/[0.02] hover:bg-white/[0.04] p-8 rounded-[2rem] border border-white/5 hover:border-lime-500/20 transition-all duration-300">
+                                                        <div className="flex items-center justify-between mb-8">
+                                                            <div className="flex items-center gap-4">
+                                                                <span className="w-12 h-12 rounded-2xl bg-lime-500/10 text-lime-400 flex items-center justify-center font-black text-xs ring-1 ring-lime-500/20 group-hover:bg-lime-500 group-hover:text-black transition-all">
+                                                                    {slideNum}
+                                                                </span>
+                                                                <h3 className="text-2xl font-black text-white tracking-tight">
+                                                                    {slideTitle || 'Untitled Slide'}
+                                                                </h3>
+                                                            </div>
+                                                            <div className="h-px flex-1 mx-8 bg-white/5" />
+                                                            <Monitor className="w-5 h-5 text-gray-700 group-hover:text-lime-500/40 transition-colors" />
                                                         </div>
 
-                                                        {contentLines.length > 0 && (
-                                                            <div>
-                                                                <h4 className="text-sm font-semibold uppercase tracking-wider text-white/50 mb-3">Content</h4>
-                                                                <div className="space-y-3">
-                                                                    {contentLines.map((line: string, j: number) => (
-                                                                        <p key={j} className="text-gray-400 leading-relaxed italic">
-                                                                            {line}{line.endsWith('.') ? '' : '.'}
-                                                                        </p>
+                                                        <div className="grid md:grid-cols-2 gap-12">
+                                                            <div className="space-y-6">
+                                                                <div className="text-[10px] font-black text-lime-500/60 uppercase tracking-[0.2em] mb-4">Key Bullets</div>
+                                                                <ul className="space-y-4">
+                                                                    {bullets.map((b: string, j: number) => (
+                                                                        <li key={j} className="flex items-start gap-4">
+                                                                            <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-lime-500 shadow-[0_0_8px_rgba(132,204,22,0.4)]" />
+                                                                            <span className="text-gray-300 font-medium leading-relaxed">{b}</span>
+                                                                        </li>
                                                                     ))}
+                                                                </ul>
+                                                            </div>
+
+                                                            <div className="space-y-8">
+                                                                {contentLines.length > 0 && (
+                                                                    <div>
+                                                                        <div className="text-[10px] font-black text-gray-500 uppercase tracking-[0.2em] mb-4">Content Summary</div>
+                                                                        <div className="space-y-3 bg-white/[0.02] p-5 rounded-2xl border border-white/5">
+                                                                            {contentLines.map((line: string, j: number) => (
+                                                                                <p key={j} className="text-gray-400 text-sm leading-relaxed italic font-medium">
+                                                                                    {line}{line.endsWith('.') ? '' : '.'}
+                                                                                </p>
+                                                                            ))}
+                                                                        </div>
+                                                                    </div>
+                                                                )}
+
+                                                                {transcriptText && (
+                                                                    <div>
+                                                                        <div className="text-[10px] font-black text-gray-500 uppercase tracking-[0.2em] mb-4">Voiceover Transcript</div>
+                                                                        <p className="text-sm text-lime-400 font-medium bg-lime-500/5 p-5 rounded-2xl border border-lime-500/10 italic leading-relaxed">
+                                                                            "{transcriptText}"
+                                                                        </p>
+                                                                    </div>
+                                                                )}
+
+                                                                <div>
+                                                                    <div className="text-[10px] font-black text-gray-500 uppercase tracking-[0.2em] mb-4">Visual Art Direction</div>
+                                                                    <p className="text-xs text-gray-400 font-bold bg-white/5 p-4 rounded-xl border border-white/5 italic leading-relaxed">
+                                                                        {visualPrompt || 'No visual prompt provided.'}
+                                                                    </p>
                                                                 </div>
                                                             </div>
-                                                        )}
-
-                                                        <div>
-                                                            <h4 className="text-sm font-semibold uppercase tracking-wider text-white/50 mb-2">Visual Prompt</h4>
-                                                            <p className="text-sm text-gray-500 bg-black/30 p-3 rounded-xl border border-white/5 italic">
-                                                                {visualPrompt || 'No visual prompt provided.'}
-                                                            </p>
                                                         </div>
                                                     </div>
-                                                </li>
-                                            );
-                                        })
-                                    ) : (
-                                        <li>No slides available.</li>
-                                    )}
-                                </ul>
-
-                            </div>
+                                                );
+                                            })
+                                        ) : (
+                                            <div className="text-center py-20 text-gray-500 font-bold italic">No slides curated for this segment.</div>
+                                        )}
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     )}
                 </div>

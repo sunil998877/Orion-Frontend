@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Clock, ClipboardList, BookOpen } from 'lucide-react';
 import { useCourseData } from '../contextAPI/courseAPI';
+import { API_BASE } from '../utils/api';
 
 
 
@@ -26,7 +27,7 @@ const CourseDetails: React.FC = () => {
   const handleModuleChange = async (value: number) => {
     updateCourseData({ module: value });
     try {
-      await fetch('http://localhost:3000/api/auth/module', {
+      await fetch(`${API_BASE}/module`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ module: value }),

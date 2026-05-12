@@ -89,6 +89,7 @@ const FileUpload: React.FC<FileUploadProps> = ({ onFilesChange }) => {
           type="file"
           multiple
           className="hidden"
+          accept=".pdf,.docx,.txt,.jpg,.jpeg,.png"
           onChange={onFileInputChange}
         />
         {files.length > 0 ? (
@@ -118,7 +119,7 @@ const FileUpload: React.FC<FileUploadProps> = ({ onFilesChange }) => {
             <p className="mt-2 text-sm text-white/80">
               <span className="font-semibold text-lime-600 cursor-pointer" onClick={onButtonClick}>Click to upload</span> or drag and drop
             </p>
-            <p className="text-xs text-white/60 mt-1">PDF, DOCX, PPTX, etc. (max. 10MB)</p>
+            <p className="text-xs text-white/60 mt-1">PDF, DOCX, TXT, Images (max. 10MB)</p>
           </div>
         )}
       </div>

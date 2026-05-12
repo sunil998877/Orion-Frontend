@@ -1,25 +1,38 @@
-import React, { createContext, useContext, useState } from 'react';
+import React, { createContext, useContext, useState, ReactNode } from 'react';
 
-const CourseDataContext = createContext<CourseDataContextType | undefined>(undefined);
+type Duration = {
+  value: number;
+  unit: string;
+};
 
-export interface CourseData {
+export type CourseData = {
+  _id?: string;
   title: string;
-  type: string;
-  description: string;
-  audience: string;
-  module: number;
-  level: string;
-  duration: {
-    value: number;
-    unit: string;
-  };
-  country: string;
-  standards: string;
-  file: File | null;
-  courseId?: string;
-}
+  description?: string;
+  audience?: string;
+  type?: string;
+  module?: number;
+  level?: string;
+  duration?: Duration;
+  country?: string;
+  standards?: string;
+  industry?: string;
+  urls?: string[];
+  createdAt?: string;
+  orionTheme?: string;
+  courseStyle?: string;
+  [key: string]: any;
+};
 
-const initialValues: CourseData = {
+type CourseContextType = {
+  courseData: CourseData;
+  updateCourseData: (data: Partial<CourseData>) => void;
+  resetCourseData: () => void;
+};
+
+const CourseContext = createContext<CourseContextType | undefined>(undefined);
+
+const initialCourseData: CourseData = {
   title: '',
   description: '',
   audience: '',
@@ -29,47 +42,37 @@ const initialValues: CourseData = {
   duration: { value: 0, unit: 'hours' },
   country: '',
   standards: '',
-  file: null,
-  courseId: '',
+  industry: '',
+  urls: [],
+  createdAt: '',
+  orionTheme: 'aurora',
+  courseStyle: 'Academic / Formal Style'
 };
 
-interface CourseDataContextType {
-  courseData: CourseData;
-  setCourseData: React.Dispatch<React.SetStateAction<CourseData>>;
-  updateCourseData: (data: Partial<CourseData>) => void;
-  resetCourseData: () => void;
-}
-
-
-
-export const CourseDataProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [courseData, setCourseData] = useState<CourseData>(initialValues);
+export const CourseDataProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+  const [courseData, setCourseData] = useState<CourseData>(initialCourseData);
 
   const updateCourseData = (data: Partial<CourseData>) => {
-    console.log('Updating course data:', data);
-    setCourseData((prev: CourseData) => ({
+    setCourseData((prev) => ({
       ...prev,
-      ...data,
-      duration: data.duration
-        ? { ...prev.duration, ...data.duration }
-        : prev.duration,
-      file: 'file' in data ? data.file : prev.file,
+      ...data
     }));
   };
+
   const resetCourseData = () => {
-    setCourseData(initialValues);
+    setCourseData(initialCourseData);
   };
 
   return (
-    <CourseDataContext.Provider value={{ courseData, setCourseData, updateCourseData, resetCourseData }}>
+    <CourseContext.Provider value={{ courseData, updateCourseData, resetCourseData }}>
       {children}
-    </CourseDataContext.Provider>
+    </CourseContext.Provider>
   );
 };
 
 export const useCourseData = () => {
-  const context = useContext(CourseDataContext);
-  if (!context) {
+  const context = useContext(CourseContext);
+  if (context === undefined) {
     throw new Error('useCourseData must be used within a CourseDataProvider');
   }
   return context;

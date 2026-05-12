@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { LogOut, ChevronDown } from 'lucide-react';
+import { API_BASE } from '../utils/api';
 
 interface User {
   name: string;
@@ -25,7 +26,7 @@ const Profile: React.FC<ProfileProps> = ({ setInstructor }) => {
           toast.error('No token found. Please login.');
           return;
         }
-        const response = await fetch('http://localhost:3000/api/auth/user', {
+        const response = await fetch(`${API_BASE}/user`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },

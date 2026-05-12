@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Globe, UsersRound, Book, ClipboardCheck } from 'lucide-react';
-import { FaShieldAlt, FaLightbulb, FaGraduationCap, FaCaretDown } from 'react-icons/fa';
+import { FaShieldAlt, FaLightbulb, FaGraduationCap, FaCaretDown, FaIndustry } from 'react-icons/fa';
 import { useCourseData } from '../contextAPI/courseAPI';
 
 
@@ -27,8 +27,21 @@ const COURSE_TYPE_ICONS: Record<string, React.ReactNode> = {
   advanced: <FaGraduationCap />
 };
 
+const INDUSTRIES = [
+  "Healthcare & Medical",
+  "Finance & Banking",
+  "Information Security / Cybersecurity",
+  "Manufacturing & Industrial",
+  "Education & Academic",
+  "Pharmaceutical & Life Sciences",
+  "Hospitality & Tourism",
+  "Environmental & Sustainability",
+  "Other"
+];
+
 const CourseBasicInfo: React.FC = () => {
   const { courseData, updateCourseData } = useCourseData();
+  const [showCustomIndustry, setShowCustomIndustry] = useState(false);
 
   // Update parent state if needed
   const handleStandardsTypeChange = (type: 'Global' | 'Regional') => {
@@ -114,6 +127,48 @@ const CourseBasicInfo: React.FC = () => {
           className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-lime-500 focus:border-lime-500 transition-colors"
           required
         ></input>
+      </div>
+
+      {/* INDUSTRY SPECIFIC */}
+      <div className='w-full'>
+        <label htmlFor='industry' className="block text-sm font-medium text-gray-400 mb-1">
+          <div className='flex items-center'>
+            <FaIndustry className='w-5 h-5 text-lime-500 mr-2' />
+            Industry Specific <span className='text-red-500'>*</span>
+          </div>
+        </label>
+        <select
+          id='industry'
+          value={showCustomIndustry ? 'Other' : (courseData.industry || '')}
+          onChange={(e) => {
+            const val = e.target.value;
+            if (val === 'Other') {
+              setShowCustomIndustry(true);
+              updateCourseData({ industry: '' });
+            } else {
+              setShowCustomIndustry(false);
+              updateCourseData({ industry: val });
+            }
+          }}
+          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:border-lime-500 focus:outline-none focus:ring-2 focus:ring-lime-500 transition-colors"
+          required
+        >
+          <option value="" disabled>Select an Industry</option>
+          {INDUSTRIES.map(ind => (
+            <option key={ind} value={ind}>{ind}</option>
+          ))}
+        </select>
+        
+        {showCustomIndustry && (
+          <input
+            type="text"
+            value={courseData.industry}
+            onChange={(e) => updateCourseData({ industry: e.target.value })}
+            placeholder="Enter custom industry"
+            className="w-full px-3 py-2 mt-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-lime-500 focus:border-lime-500 transition-colors"
+            required
+          />
+        )}
       </div>
 
       <div className='w-full'>
