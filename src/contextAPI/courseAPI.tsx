@@ -9,7 +9,7 @@ export type CourseData = {
   _id?: string;
   title: string;
   description?: string;
-  audience?: string;
+  audience?: string | string[];
   type?: string;
   module?: number;
   level?: string;

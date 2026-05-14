@@ -56,6 +56,15 @@ import type { ModuleState } from '../pages/Modules/ModuleGen';
 import { GAMMA_THEMES, THEME_CATEGORIES } from '../utils/themes';
 
 
+const hasAudience = (audience?: string | string[]) => {
+  if (Array.isArray(audience)) return audience.length > 0;
+  return !!audience?.trim();
+};
+
+const formatAudience = (audience?: string | string[]) => {
+  if (Array.isArray(audience)) return audience.join(', ');
+  return audience || '';
+};
 
 type PreviewLesson = { id: string; title: string };
 type PreviewModule = { id: number; title: string; lessons: PreviewLesson[] };
@@ -169,6 +178,9 @@ const CourseCreatorForm: React.FC = () => {
   const [themeByModule, setThemeByModule] = useState<Record<number, string>>({});
   const [selectedModuleForTheme, setSelectedModuleForTheme] = useState<number | null>(null);
   const [isCustomAudience, setIsCustomAudience] = useState(false);
+  const [isAudienceDropdownOpen, setIsAudienceDropdownOpen] = useState(false);
+  const [customAudienceInput, setCustomAudienceInput] = useState('');
+  const audienceDropdownRef = useRef<HTMLDivElement>(null);
   const [isCustomIndustry, setIsCustomIndustry] = useState(false);
   const [isCustomCountry, setIsCustomCountry] = useState(false);
   const [downloadingModuleId, setDownloadingModuleId] = useState<number | null>(null);
@@ -189,6 +201,9 @@ const CourseCreatorForm: React.FC = () => {
       }
       if (notifDropdownRef.current && !notifDropdownRef.current.contains(event.target as Node)) {
         setNotifOpen(false);
+      }
+      if (audienceDropdownRef.current && !audienceDropdownRef.current.contains(event.target as Node)) {
+        setIsAudienceDropdownOpen(false);
       }
     };
     document.addEventListener("mousedown", handleClickOutside);
@@ -484,7 +499,7 @@ const CourseCreatorForm: React.FC = () => {
       if (step === 1) {
         if (!courseData.title?.trim()) {
           toast.warn("Please enter a course title.");
-        } else if (!courseData.audience?.trim()) {
+        } else if (!hasAudience(courseData.audience)) {
           toast.warn("Please specify your target audience.");
         } else if (!courseData.level) {
           toast.warn("Please select an experience level.");
@@ -1684,7 +1699,7 @@ const CourseCreatorForm: React.FC = () => {
         const bodyPrompt: any = {};
 
         if (mode === 'content') {
-          bodyPrompt.prompt1 = `Create detailed content for Module [${i}] of the course titled "${courseData.title}". Audience: "${courseData.audience}". Course type: "${courseData.type}". Teaching Style: "${courseData.courseStyle || 'Academic / Formal Style'}" (Ensure the module output, teaching context, case studies, and quiz questions deeply reflect this specific style. e.g. for storytelling use narrative flow, for scenario-based use fictional characters/scenarios throughout the content). Standards: "${courseData.standards}". Description: "${courseData.description}". Include objectives, teaching content with standards references, a case study with questions and model answers, quizzes with questions and answers, visual descriptions, and relevant external links or book references for further study. Respond ONLY with a valid JSON object matching the expected module content schema.`;
+          bodyPrompt.prompt1 = `Create detailed content for Module [${i}] of the course titled "${courseData.title}". Audience: "${formatAudience(courseData.audience)}". Course type: "${courseData.type}". Teaching Style: "${courseData.courseStyle || 'Academic / Formal Style'}" (Ensure the module output, teaching context, case studies, and quiz questions deeply reflect this specific style. e.g. for storytelling use narrative flow, for scenario-based use fictional characters/scenarios throughout the content). Standards: "${courseData.standards}". Description: "${courseData.description}". Include objectives, teaching content with standards references, a case study with questions and model answers, quizzes with questions and answers, visual descriptions, and relevant external links or book references for further study. Respond ONLY with a valid JSON object matching the expected module content schema.`;
         }
         // ========== SLIDE GENERATION COMMENTED OUT ==========
         // if (mode === 'slides') {
@@ -1822,7 +1837,7 @@ const CourseCreatorForm: React.FC = () => {
   const isStepComplete = (s: number) => {
     switch (s) {
       case 1:
-        const baseComplete = !!(courseData.title?.trim() && courseData.audience?.trim() && courseData.level);
+        const baseComplete = !!(courseData.title?.trim() && hasAudience(courseData.audience) && courseData.level);
         if (courseData.standards === 'Regional') {
           return baseComplete && !!courseData.country;
         }
@@ -2170,58 +2185,131 @@ const CourseCreatorForm: React.FC = () => {
                                   value=""
                                 />
                               </div>
-                            ) : AUDIENCE_OPTIONS[courseData.level] && !isCustomAudience ? (
-                              <select
-                                className={`w-full bg-gray-800/50 border rounded-xl py-3 pl-11 pr-10 focus:ring-2 focus:ring-lime-500 outline-none appearance-none cursor-pointer transition-all ${showValidation && !courseData.audience?.trim() ? 'border-amber-500/50 ring-1 ring-amber-500/20 shadow-[0_0_15px_rgba(245,158,11,0.1)]' : 'border-gray-700'
-                                  }`}
-                                value={courseData.audience}
-                                onChange={(e) => {
-                                  if (e.target.value === 'Other') {
-                                    setIsCustomAudience(true);
-                                    updateCourseData({ audience: '' });
-                                  } else {
-                                    updateCourseData({ audience: e.target.value });
-                                  }
-                                }}
-                              >
-                                <option value="">Select Target Audience...</option>
-                                {AUDIENCE_OPTIONS[courseData.level].map(opt => (
-                                  <option key={opt} value={opt}>{opt}</option>
-                                ))}
-                                <option value="Other">Other / Custom...</option>
-                              </select>
                             ) : (
-                              <div className="relative group">
-                                <input
-                                  className={`w-full bg-gray-800/50 border rounded-xl py-3 pl-11 pr-12 focus:ring-2 focus:ring-lime-500 outline-none transition-all ${showValidation && !courseData.audience?.trim() ? 'border-amber-500/50 ring-1 ring-amber-500/20 shadow-[0_0_15px_rgba(245,158,11,0.1)]' : 'border-gray-700'
-                                    }`}
-                                  placeholder="Who is this course for?"
-                                  value={courseData.audience}
-                                  onChange={(e) => {
-                                    const val = e.target.value;
-                                    const capitalized = val.charAt(0).toUpperCase() + val.slice(1);
-                                    updateCourseData({ audience: capitalized });
-                                  }}
-                                />
-                                {courseData.level && AUDIENCE_OPTIONS[courseData.level] && (
-                                  <button
-                                    type="button"
-                                    onClick={() => {
-                                      setIsCustomAudience(false);
-                                      updateCourseData({ audience: '' });
-                                    }}
-                                    className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-gray-500 hover:text-lime-500 transition-colors"
-                                    title="Back to presets"
-                                  >
-                                    <X size={16} />
-                                  </button>
-                                )}
+                              <div className="relative" ref={audienceDropdownRef}>
+                                <div
+                                  onClick={() => setIsAudienceDropdownOpen(!isAudienceDropdownOpen)}
+                                  className={`w-full min-h-[50px] bg-gray-800/50 border rounded-xl py-2 pl-11 pr-10 flex flex-wrap items-center gap-2 cursor-pointer transition-all ${showValidation && !hasAudience(courseData.audience) ? 'border-amber-500/50 ring-1 ring-amber-500/20 shadow-[0_0_15px_rgba(245,158,11,0.1)]' : 'border-gray-700'}`}
+                                >
+                                  {Array.isArray(courseData.audience) && courseData.audience.length > 0 ? (
+                                    courseData.audience.map((aud, idx) => (
+                                      <span key={idx} className="bg-lime-500/20 text-lime-400 text-xs px-2 py-1 rounded-md flex items-center gap-1 border border-lime-500/30">
+                                        {aud}
+                                        <button
+                                          type="button"
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            const newAud = (courseData.audience as string[]).filter(a => a !== aud);
+                                            updateCourseData({ audience: newAud });
+                                          }}
+                                          className="hover:text-lime-300"
+                                        >
+                                          <X size={12} />
+                                        </button>
+                                      </span>
+                                    ))
+                                  ) : (typeof courseData.audience === 'string' && courseData.audience.trim() ? (
+                                    <span className="bg-lime-500/20 text-lime-400 text-xs px-2 py-1 rounded-md flex items-center gap-1 border border-lime-500/30">
+                                      {courseData.audience}
+                                      <button
+                                        type="button"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          updateCourseData({ audience: [] });
+                                        }}
+                                        className="hover:text-lime-300"
+                                      >
+                                        <X size={12} />
+                                      </button>
+                                    </span>
+                                  ) : (
+                                    <span className="text-gray-500 select-none py-1">Select Target Audiences...</span>
+                                  ))}
+                                </div>
+                                <ChevronDown className={`absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 w-5 h-5 pointer-events-none transition-transform ${isAudienceDropdownOpen ? 'rotate-180' : ''}`} />
+                                
+                                <AnimatePresence>
+                                  {isAudienceDropdownOpen && (
+                                    <motion.div
+                                      initial={{ opacity: 0, y: -10 }}
+                                      animate={{ opacity: 1, y: 0 }}
+                                      exit={{ opacity: 0, y: -10 }}
+                                      className="absolute z-50 w-full mt-2 bg-gray-800 border border-gray-700 rounded-xl shadow-xl overflow-hidden"
+                                    >
+                                      <div className="max-h-60 overflow-y-auto p-2 space-y-1 custom-scrollbar">
+                                        {AUDIENCE_OPTIONS[courseData.level]?.map(opt => {
+                                          const isSelected = Array.isArray(courseData.audience) 
+                                            ? courseData.audience.includes(opt) 
+                                            : courseData.audience === opt;
+                                          return (
+                                            <div
+                                              key={opt}
+                                              onClick={() => {
+                                                let current = Array.isArray(courseData.audience) ? [...courseData.audience] : (courseData.audience ? [courseData.audience] : []);
+                                                if (isSelected) {
+                                                  current = current.filter(a => a !== opt);
+                                                } else {
+                                                  current.push(opt);
+                                                }
+                                                updateCourseData({ audience: current });
+                                              }}
+                                              className={`w-full text-left px-3 py-2 rounded-lg text-sm cursor-pointer transition-colors flex items-center justify-between ${isSelected ? 'bg-lime-500/10 text-lime-400' : 'text-gray-300 hover:bg-gray-700/50'}`}
+                                            >
+                                              {opt}
+                                              {isSelected && <Check size={16} className="text-lime-500" />}
+                                            </div>
+                                          );
+                                        })}
+                                      </div>
+                                      <div className="p-2 border-t border-gray-700 bg-gray-900/50">
+                                        <div className="flex gap-2">
+                                          <input
+                                            type="text"
+                                            value={customAudienceInput}
+                                            onChange={(e) => setCustomAudienceInput(e.target.value)}
+                                            onKeyDown={(e) => {
+                                              if (e.key === 'Enter') {
+                                                e.preventDefault();
+                                                if (customAudienceInput.trim()) {
+                                                  const capitalized = customAudienceInput.charAt(0).toUpperCase() + customAudienceInput.slice(1);
+                                                  let current = Array.isArray(courseData.audience) ? [...courseData.audience] : (courseData.audience ? [courseData.audience] : []);
+                                                  if (!current.includes(capitalized)) {
+                                                    current.push(capitalized);
+                                                    updateCourseData({ audience: current });
+                                                  }
+                                                  setCustomAudienceInput('');
+                                                }
+                                              }
+                                            }}
+                                            placeholder="Add custom audience..."
+                                            className="flex-1 bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-lime-500 outline-none"
+                                          />
+                                          <button
+                                            type="button"
+                                            onClick={(e) => {
+                                              e.preventDefault();
+                                              if (customAudienceInput.trim()) {
+                                                const capitalized = customAudienceInput.charAt(0).toUpperCase() + customAudienceInput.slice(1);
+                                                let current = Array.isArray(courseData.audience) ? [...courseData.audience] : (courseData.audience ? [courseData.audience] : []);
+                                                if (!current.includes(capitalized)) {
+                                                  current.push(capitalized);
+                                                  updateCourseData({ audience: current });
+                                                }
+                                                setCustomAudienceInput('');
+                                              }
+                                            }}
+                                            className="bg-lime-500/20 text-lime-400 p-2 rounded-lg hover:bg-lime-500/30 transition-colors"
+                                          >
+                                            <Plus size={16} />
+                                          </button>
+                                        </div>
+                                      </div>
+                                    </motion.div>
+                                  )}
+                                </AnimatePresence>
                               </div>
                             )}
-                            {courseData.level && AUDIENCE_OPTIONS[courseData.level] && !isCustomAudience && (
-                              <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 w-5 h-5 pointer-events-none" />
-                            )}
-                            {showValidation && !courseData.audience?.trim() && <WarningSign />}
+                            {showValidation && !hasAudience(courseData.audience) && <WarningSign />}
                           </div>
                         </div>
                       </div>
@@ -3596,7 +3684,7 @@ const CourseCreatorForm: React.FC = () => {
                             </div>
                             <div>
                               <p className="text-xs text-gray-500">AUDIENCE</p>
-                              <p className="text-sm text-gray-300 italic">"{courseData.audience}"</p>
+                              <p className="text-sm text-gray-300 italic">"{formatAudience(courseData.audience)}"</p>
                             </div>
                           </div>
                         </div>
