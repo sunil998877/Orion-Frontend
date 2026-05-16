@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Search, Bell, Menu, X, LogOut, Camera, User, Home, BookOpen, BarChart } from "lucide-react";
+import { Search, Bell, Menu, X, LogOut, Camera, User, Home, BookOpen, BarChart, ArrowUp, Shield } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
 import AvatarCropModal from "../components/AvatarCropModal";
@@ -18,6 +18,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const [avatarDropdownOpen, setAvatarDropdownOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
   const [notifications, setNotifications] = useState<any[]>([]);
+  const [showScrollTop, setShowScrollTop] = useState(false);
 
   const avatarDropdownRef = React.useRef<HTMLDivElement>(null);
   const notifDropdownRef = React.useRef<HTMLDivElement>(null);
@@ -34,6 +35,22 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      if (window.scrollY > 300) {
+        setShowScrollTop(true);
+      } else {
+        setShowScrollTop(false);
+      }
+    };
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
   const fetchNotifications = async () => {
     try {
       const token = localStorage.getItem('token');
@@ -244,6 +261,22 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                   </div>
                   <div className="py-1">
                     <button
+                      onClick={(e) => { e.stopPropagation(); setAvatarModalOpen(true); setAvatarDropdownOpen(false); }}
+                      className="w-full px-4 py-3 text-sm text-left text-white/70 hover:bg-white/10 flex items-center gap-3 transition-all font-bold"
+                    >
+                      <Camera className="w-4 h-4 text-lime-400" />
+                      Change Avatar
+                    </button>
+                    <div className="h-px bg-white/5 mx-2 my-1"></div>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); alert('Forget Password section coming soon!'); setAvatarDropdownOpen(false); }}
+                      className="w-full px-4 py-3 text-sm text-left text-white/70 hover:bg-white/10 flex items-center gap-3 transition-all font-bold"
+                    >
+                      <Shield className="w-4 h-4 text-emerald-400" />
+                      Reset Password
+                    </button>
+                    <div className="h-px bg-white/5 mx-2 my-1"></div>
+                    <button
                       onClick={(e) => { e.stopPropagation(); handleLogout(); }}
                       className="w-full px-4 py-3 text-sm text-left text-red-400 hover:bg-red-500/10 flex items-center gap-3 transition-all font-bold"
                     >
@@ -281,7 +314,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           </div>
         </aside>
         <main className="flex-1 p-6">
-          <div className="max-w-7xl mx-auto space-y-8">{children}</div>
+          <div className="w-full space-y-8">{children}</div>
         </main>
       </div>
       <AvatarCropModal
@@ -334,6 +367,16 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             </nav>
           </div>
         </div>
+      )}
+
+      {showScrollTop && (
+        <button
+          onClick={scrollToTop}
+          className="fixed bottom-8 right-8 z-50 p-3 rounded-full bg-lime-500/20 text-lime-400 border border-lime-500/30 hover:bg-lime-500/30 hover:border-lime-500/50 backdrop-blur-md shadow-[0_0_15px_rgba(132,204,22,0.2)] hover:shadow-[0_0_25px_rgba(132,204,22,0.4)] transition-all duration-300 transform hover:-translate-y-1"
+          aria-label="Scroll to top"
+        >
+          <ArrowUp className="w-6 h-6" />
+        </button>
       )}
     </div>
   );

@@ -1,7 +1,7 @@
 import { toast } from 'react-toastify';
 import { ORIGIN } from './api';
 
-const API_ORIGIN = ORIGIN || 'http://localhost:3000';
+const API_ORIGIN = ORIGIN || 'http://localhost:3000/api';
 
 function handleAuthError() {
   localStorage.removeItem('token');

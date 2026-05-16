@@ -160,6 +160,9 @@ const CourseCreatorForm: React.FC = () => {
   const [isPreviewLoading, setIsPreviewLoading] = useState(false);
   const [isGeneratingDescription, setIsGeneratingDescription] = useState(false);
   const [isDescriptionEditable, setIsDescriptionEditable] = useState(false);
+  const [isRefiningDescription, setIsRefiningDescription] = useState(false);
+  const [refinePromptOpen, setRefinePromptOpen] = useState(false);
+  const [refinePromptText, setRefinePromptText] = useState('');
   const [urlInput, setUrlInput] = useState('');
   const [urlError, setUrlError] = useState<string | null>(null);
   const [prefetchedContentMap, setPrefetchedContentMap] = useState<Record<number, any>>({});
@@ -186,6 +189,7 @@ const CourseCreatorForm: React.FC = () => {
   const [downloadingModuleId, setDownloadingModuleId] = useState<number | null>(null);
   const [showScrollArrow, setShowScrollArrow] = useState(false);
   const [showScrollArrowModules, setShowScrollArrowModules] = useState(false);
+  const [showGenerateWarning, setShowGenerateWarning] = useState(false);
   const [highlightedModuleId, setHighlightedModuleId] = useState<number | null>(null);
   const moduleRefs = useRef<Record<number, HTMLDivElement | null>>({});
   const scrollRefGuidance = useRef<HTMLDivElement>(null);
@@ -646,6 +650,42 @@ const CourseCreatorForm: React.FC = () => {
       toast.error('Could not generate description. Please fill it manually.');
     } finally {
       setIsGeneratingDescription(false);
+    }
+  };
+
+  const handleRefineDescription = async () => {
+    if (!refinePromptText.trim() || !courseData.description) return;
+    setIsRefiningDescription(true);
+
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        navigate('/login');
+        return;
+      }
+      const resp = await fetch(`${API_BASE}/refine-course-description`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({
+          currentDescription: courseData.description,
+          prompt: refinePromptText
+        })
+      });
+      if (resp.ok) {
+        const { refinedDescription } = await resp.json();
+        if (refinedDescription) {
+          updateCourseData({ description: refinedDescription });
+          toast.success("Description refined successfully!");
+          setRefinePromptOpen(false);
+        }
+      } else {
+        toast.error('Could not refine description.');
+      }
+    } catch {
+      toast.error('Error connecting to the refinement service.');
+    } finally {
+      setIsRefiningDescription(false);
+      setRefinePromptText('');
     }
   };
 
@@ -2227,7 +2267,7 @@ const CourseCreatorForm: React.FC = () => {
                                   ))}
                                 </div>
                                 <ChevronDown className={`absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 w-5 h-5 pointer-events-none transition-transform ${isAudienceDropdownOpen ? 'rotate-180' : ''}`} />
-                                
+
                                 <AnimatePresence>
                                   {isAudienceDropdownOpen && (
                                     <motion.div
@@ -2238,8 +2278,8 @@ const CourseCreatorForm: React.FC = () => {
                                     >
                                       <div className="max-h-60 overflow-y-auto p-2 space-y-1 custom-scrollbar">
                                         {AUDIENCE_OPTIONS[courseData.level]?.map(opt => {
-                                          const isSelected = Array.isArray(courseData.audience) 
-                                            ? courseData.audience.includes(opt) 
+                                          const isSelected = Array.isArray(courseData.audience)
+                                            ? courseData.audience.includes(opt)
                                             : courseData.audience === opt;
                                           return (
                                             <div
@@ -2659,8 +2699,8 @@ const CourseCreatorForm: React.FC = () => {
                           {isDescriptionEditable ? <Check className="w-4 h-4" strokeWidth={3} /> : <Pencil className="w-4 h-4" />}
                         </button>
                         <textarea
-                          readOnly={!isDescriptionEditable}
-                          className={`w-full bg-gray-800/50 border rounded-2xl p-4 pl-12 min-h-[160px] ${isDescriptionEditable ? 'pb-16' : ''} focus:ring-2 focus:ring-lime-500 outline-none transition-all resize-none ${!isDescriptionEditable ? 'cursor-default text-gray-400' : 'cursor-text text-white'} ${showValidation && (courseData.description?.trim().split(/\s+/).filter(Boolean).length || 0) >= 5000
+                          readOnly={!isDescriptionEditable || isRefiningDescription}
+                          className={`w-full bg-gray-800/50 border rounded-2xl p-4 pl-12 min-h-[160px] ${isDescriptionEditable ? 'pb-16' : ''} focus:ring-2 focus:ring-lime-500 outline-none transition-all resize-none ${!isDescriptionEditable || isRefiningDescription ? 'cursor-default text-gray-400' : 'cursor-text text-white'} ${showValidation && (courseData.description?.trim().split(/\s+/).filter(Boolean).length || 0) >= 5000
                             ? 'border-amber-500/50 ring-1 ring-amber-500/20 shadow-[0_0_15px_rgba(245,158,11,0.1)]'
                             : showValidation && (!courseData.description?.trim() || courseData.description.trim().split(/\s+/).filter(Boolean).length < 50)
                               ? 'border-amber-500/50 ring-1 ring-amber-500/20 shadow-[0_0_15px_rgba(245,158,11,0.1)]'
@@ -2681,14 +2721,22 @@ const CourseCreatorForm: React.FC = () => {
                             }
                           }}
                         />
+                        {isRefiningDescription && (
+                          <div className="absolute inset-0 bg-gray-900/60 backdrop-blur-sm rounded-2xl flex items-center justify-center border border-lime-500/30 z-10">
+                            <div className="flex flex-col items-center gap-2">
+                              <Loader2 className="w-8 h-8 text-lime-400 animate-spin" />
+                              <span className="text-lime-400 text-sm font-semibold tracking-wide uppercase">Refining Description...</span>
+                            </div>
+                          </div>
+                        )}
                         {showValidation && ((!courseData.description?.trim() || courseData.description.trim().split(/\s+/).filter(Boolean).length < 50) ||
                           (courseData.description?.trim().split(/\s+/).filter(Boolean).length || 0) >= 5000) && (
                             <div className="absolute right-4 top-4 text-amber-500 animate-pulse pointer-events-none">
                               <Zap size={18} fill="currentColor" />
                             </div>
                           )}
-                        {isDescriptionEditable && (
-                          <div className="absolute right-4 bottom-4 animate-in fade-in zoom-in-95 duration-200">
+                        {isDescriptionEditable && !isRefiningDescription && (
+                          <div className="absolute right-4 bottom-4 animate-in fade-in zoom-in-95 duration-200 z-10">
                             <button
                               type="button"
                               onClick={() => setIsDescriptionEditable(false)}
@@ -2699,9 +2747,52 @@ const CourseCreatorForm: React.FC = () => {
                           </div>
                         )}
                       </div>
-                      <p className="mt-2 text-xs text-gray-500">
-                        Provide a detailed overview of the course goals and curriculum structure.
-                      </p>
+
+                      {refinePromptOpen && (
+                        <div className="mt-3 bg-gray-800/80 p-3 rounded-xl border border-lime-500/30 animate-in fade-in zoom-in-95 duration-200">
+                          <label className="block text-xs font-semibold text-lime-400 uppercase tracking-wider mb-2">How should I refine this?</label>
+                          <div className="flex gap-2">
+                            <input
+                              type="text"
+                              value={refinePromptText}
+                              onChange={(e) => setRefinePromptText(e.target.value)}
+                              placeholder="e.g., Make it shorter, focus more on beginners..."
+                              className="flex-1 bg-gray-900/50 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-lime-500 focus:ring-1 focus:ring-lime-500"
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter') handleRefineDescription();
+                              }}
+                            />
+                            <button
+                              onClick={handleRefineDescription}
+                              disabled={isRefiningDescription || !refinePromptText.trim()}
+                              className="bg-lime-500 hover:bg-lime-400 text-black px-4 py-2 rounded-lg text-sm font-bold shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 transition-all"
+                            >
+                              {isRefiningDescription ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+                              Refine
+                            </button>
+                            <button
+                              onClick={() => { setRefinePromptOpen(false); setRefinePromptText(''); }}
+                              className="bg-gray-700 hover:bg-gray-600 text-white px-3 py-2 rounded-lg text-sm transition-all"
+                            >
+                              <X className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </div>
+                      )}
+
+                      <div className="flex items-center justify-between mt-2">
+                        <p className="text-xs text-gray-500">
+                          Provide a detailed overview of the course goals and curriculum structure.
+                        </p>
+                        <button
+                          type="button"
+                          onClick={() => setRefinePromptOpen(!refinePromptOpen)}
+                          className="flex items-center gap-1.5 text-xs text-lime-400 hover:text-lime-300 font-semibold uppercase tracking-wider transition-colors"
+                        >
+                          <Sparkles className="w-3.5 h-3.5" />
+                          Refine with AI
+                        </button>
+                      </div>
                     </div>
 
                     <div className="grid md:grid-cols-2 gap-8">
@@ -3121,13 +3212,56 @@ const CourseCreatorForm: React.FC = () => {
                           <p className="text-gray-400 max-w-lg mb-10 leading-relaxed">
                             Based on your inputs, ORION is ready to architect {courseData.module} specialized modules for <span className="text-lime-400">"{courseData.title || 'Your Course'}"</span>.
                           </p>
-                          <button
-                            onClick={generateOrionPreview}
-                            className="flex items-center gap-3 bg-lime-500 hover:bg-lime-400 text-black px-12 py-4 rounded-2xl font-black text-lg transition-all shadow-xl shadow-lime-500/20"
-                            type="button"
-                          >
-                            <Zap size={24} /> Generate Modules
-                          </button>
+                          <div className="relative group">
+                            {/* Confirmation Popup */}
+                            <AnimatePresence>
+                              {showGenerateWarning && (
+                                <motion.div
+                                  initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                                  exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                                  className="absolute bottom-full mb-4 left-1/2 -translate-x-1/2 w-72 bg-[#1a1c24] border border-red-500/30 rounded-2xl p-4 shadow-2xl z-50 backdrop-blur-xl"
+                                >
+                                  <div className="flex flex-col items-center text-center">
+                                    <div className="w-10 h-10 rounded-full bg-red-500/10 flex items-center justify-center mb-3">
+                                      <AlertTriangle className="text-red-500 w-6 h-6 animate-pulse" />
+                                    </div>
+                                    <h4 className="text-white font-bold text-sm mb-1 uppercase tracking-wider">Are you sure?</h4>
+                                    <p className="text-gray-400 text-[11px] leading-relaxed mb-4">
+                                      Once generation begins, <span className="text-red-400 font-bold underline">there's no turning back</span>. Your core settings will be locked in to architect the modules.
+                                    </p>
+                                    <div className="flex gap-2 w-full">
+                                      <button
+                                        onClick={() => setShowGenerateWarning(false)}
+                                        className="flex-1 py-2 rounded-lg bg-gray-800 hover:bg-gray-700 text-gray-300 text-[10px] font-black uppercase tracking-widest transition-all"
+                                      >
+                                        No
+                                      </button>
+                                      <button
+                                        onClick={() => {
+                                          setShowGenerateWarning(false);
+                                          generateOrionPreview();
+                                        }}
+                                        className="flex-1 py-2 rounded-lg bg-red-500 hover:bg-red-400 text-black text-[10px] font-black uppercase tracking-widest transition-all shadow-lg shadow-red-500/20"
+                                      >
+                                        Yes
+                                      </button>
+                                    </div>
+                                  </div>
+                                  {/* Arrow */}
+                                  <div className="absolute top-full left-1/2 -translate-x-1/2 -mt-1 border-8 border-transparent border-t-[#1a1c24]"></div>
+                                </motion.div>
+                              )}
+                            </AnimatePresence>
+
+                            <button
+                              onClick={() => setShowGenerateWarning(true)}
+                              className="flex items-center gap-3 bg-lime-500 hover:bg-lime-400 text-black px-12 py-4 rounded-2xl font-black text-lg transition-all shadow-xl shadow-lime-500/20"
+                              type="button"
+                            >
+                              <Zap size={24} /> Generate Modules
+                            </button>
+                          </div>
                         </div>
                         <div className="mt-auto pt-8 flex justify-start">
                           <button
@@ -3190,13 +3324,13 @@ const CourseCreatorForm: React.FC = () => {
                           <div>
                             <h2 className="text-4xl font-black tracking-tight text-white mb-2">Curriculum Blueprint</h2>
                             <div className="flex items-center gap-2">
-                              <p className="text-gray-400 text-sm font-medium">Review and finalize the architectural structure of your course modules.</p>
+                              <p className="text-gray-400 text-sm font-medium">Here is your Curriculum Blueprint — review and finalize the course structure, modules.</p>
                               <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-red-500/10 border border-red-500/20 text-red-400 animate-pulse">
                                 <AlertTriangle size={12} />
                                 <span className="text-[10px] font-bold uppercase tracking-wider">Navigation Locked</span>
                               </div>
                             </div>
-                            <p className="text-red-400/80 text-[11px] font-bold mt-1 uppercase tracking-widest italic">You cannot go back when the course is generated.</p>
+                            <p className="text-red-400/80 text-[11px] font-bold mt-1 uppercase tracking-widest italic">Once generated, you won’t be able to return to this section.</p>
                           </div>
 
                           <button
@@ -3846,6 +3980,21 @@ const CourseCreatorForm: React.FC = () => {
                 </motion.div>
               )}
             </AnimatePresence>
+
+            {/* Global AI Warning Footer */}
+            <div className="mt-8 mb-4 flex flex-col items-center justify-center gap-1 opacity-80 animate-pulse">
+              <div className="flex items-center gap-2">
+                <Sparkles className="w-4 h-4 text-amber-500" />
+                <p className="text-[10px] sm:text-xs text-amber-500 uppercase tracking-widest font-black text-center">
+                  Warning: AI can make mistakes. Please verify all generated content before launching.
+                </p>
+                <Sparkles className="w-4 h-4 text-amber-500" />
+              </div>
+              <p className="text-[9px] sm:text-[10px] text-amber-500/60 uppercase tracking-[0.2em] font-bold">
+                Internet connectivity may also affect the generation time
+              </p>
+            </div>
+
           </div>
         </div>
       </main>
@@ -3909,7 +4058,7 @@ const CourseCreatorForm: React.FC = () => {
                 </div>
 
                 <h3 className="text-2xl font-bold text-white mb-2">Preparing Your Slides</h3>
-                <p className="text-gray-400 animate-pulse font-mono uppercase text-xs tracking-widest mb-6">Generating professional presentations using Gamma AI...</p>
+                <p className="text-gray-400 animate-pulse font-mono uppercase text-xs tracking-widest mb-6">Please avoid refreshing the page or navigating back while the slides are being generated, as this may interrupt the generation process.</p>
 
                 <div className="w-full max-w-md">
                   <div className="flex justify-between text-[10px] font-black uppercase tracking-widest text-gray-500 mb-2 px-1">
