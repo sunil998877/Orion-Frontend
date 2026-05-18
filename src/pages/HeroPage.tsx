@@ -50,6 +50,10 @@ export const HeroPage: React.FC = () => {
     audioTranscript?: string;
     ebookUrl?: string;
     ebookStatus?: 'idle' | 'generating' | 'completed' | 'failed';
+    podcastUrl?: string;
+    podcastTranscript?: string;
+    podcastScript?: { speaker: string; text: string }[];
+    podcastStatus?: 'idle' | 'generating' | 'completed' | 'failed';
     courseId?: string;
     createdAt?: string;
   };
@@ -84,6 +88,9 @@ export const HeroPage: React.FC = () => {
     audioUrl: '',
     ebookUrl: '',
     ebookStatus: 'idle',
+    podcastUrl: '',
+    podcastScript: [],
+    podcastStatus: 'idle',
     createdAt: ''
   });
 
@@ -134,6 +141,18 @@ export const HeroPage: React.FC = () => {
   const [audioProgress, setAudioProgress] = useState(0);
   const [showAudioPlayer, setShowAudioPlayer] = useState(false);
   const [showTranscript, setShowTranscript] = useState(false);
+  
+  // Podcast States
+  const [isGeneratingPodcast, setIsGeneratingPodcast] = useState(false);
+  const [podcastProgress, setPodcastProgress] = useState(0);
+  const [showPodcastPlayer, setShowPodcastPlayer] = useState(false);
+  const [showPodcastTranscript, setShowPodcastTranscript] = useState(false);
+  const [isPodcastPlaying, setIsPodcastPlaying] = useState(false);
+  const [podcastCurrentTime, setPodcastCurrentTime] = useState(0);
+  const [podcastDuration, setPodcastDuration] = useState(0);
+  const [podcastSpeed, setPodcastSpeed] = useState(1);
+  const [showPodcastSpeedMenu, setShowPodcastSpeedMenu] = useState(false);
+
   const [isGeneratingEbook, setIsGeneratingEbook] = useState(false);
   const [showPublisherModal, setShowPublisherModal] = useState(false);
   const [publisherName, setPublisherName] = useState('');
@@ -174,12 +193,138 @@ export const HeroPage: React.FC = () => {
     }
   };
 
+  const handleGeneratePodcast = async () => {
+    const courseId = courseData.courseId || courseData._id;
+    if (!courseId) return;
+
+    setIsGeneratingPodcast(true);
+    setPodcastProgress(0);
+    try {
+      const token = localStorage.getItem('token');
+      const resp = await fetch(`${API_BASE}/courses/${courseId}/generate-podcast`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (resp.ok) {
+        const data = await resp.json();
+        setPodcastProgress(100);
+
+        setTimeout(() => {
+          setCourseData(prev => ({ 
+            ...prev, 
+            podcastUrl: data.podcastUrl, 
+            podcastScript: data.podcastScript,
+            podcastTranscript: data.podcastTranscript 
+          }));
+          setCourses(prev => prev.map(c => (c._id === courseId || c.courseId === courseId) ? { 
+            ...c, 
+            podcastUrl: data.podcastUrl, 
+            podcastScript: data.podcastScript,
+            podcastTranscript: data.podcastTranscript 
+          } : c));
+          setIsGeneratingPodcast(false);
+          toast.success('Podcast generated successfully!');
+        }, 800);
+      } else {
+        const err = await resp.json();
+        console.error('Podcast generation failed:', err.message);
+        toast.error(`Generation failed: ${err.message}`);
+        setIsGeneratingPodcast(false);
+      }
+    } catch (err: any) {
+      console.error('Podcast generation error:', err);
+      toast.error(`Error: ${err.message || 'Something went wrong'}`);
+      setIsGeneratingPodcast(false);
+    }
+  };
+
   const [isPlaying, setIsPlaying] = useState(false);
   const [duration, setDuration] = useState(0);
   const [currentTime, setCurrentTime] = useState(0);
   const [playbackSpeed, setPlaybackSpeed] = useState(1);
   const [showSpeedMenu, setShowSpeedMenu] = useState(false);
   const audioRef = React.useRef<HTMLAudioElement>(null);
+
+  const podcastAudioRef = React.useRef<HTMLAudioElement>(null);
+
+  const togglePodcastPlay = () => {
+    if (podcastAudioRef.current) {
+      if (isPodcastPlaying) {
+        podcastAudioRef.current.pause();
+      } else {
+        podcastAudioRef.current.play();
+      }
+      setIsPodcastPlaying(!isPodcastPlaying);
+    }
+  };
+
+  const selectPodcastSpeed = (speed: number) => {
+    setPodcastSpeed(speed);
+    setShowPodcastSpeedMenu(false);
+    if (podcastAudioRef.current) {
+      podcastAudioRef.current.playbackRate = speed;
+    }
+  };
+
+  const handlePodcastTimeUpdate = () => {
+    if (podcastAudioRef.current) {
+      setPodcastCurrentTime(podcastAudioRef.current.currentTime);
+    }
+  };
+
+  const handlePodcastLoadedMetadata = () => {
+    if (podcastAudioRef.current) {
+      setPodcastDuration(podcastAudioRef.current.duration);
+    }
+  };
+
+  const handlePodcastSeek = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const time = Number(e.target.value);
+    if (podcastAudioRef.current) {
+      podcastAudioRef.current.currentTime = time;
+      setPodcastCurrentTime(time);
+    }
+  };
+
+  const handleDownloadPodcast = async () => {
+    if (!courseData.podcastUrl) return;
+    try {
+      const resp = await fetch(`${ORIGIN}${courseData.podcastUrl}`);
+      if (!resp.ok) throw new Error('Failed to fetch podcast file');
+      const blob = await resp.blob();
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `podcast-${courseData.courseId || 'course'}.mp3`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    } catch (err: any) {
+      console.error('Download error:', err);
+      toast.error('Download failed. Please try again.');
+    }
+  };
+
+  const getActivePodcastBubbleIndex = () => {
+    if (!courseData.podcastScript || courseData.podcastScript.length === 0 || podcastDuration === 0 || !isPodcastPlaying) return -1;
+    // Calculate character boundaries for each turn
+    const characterCounts = courseData.podcastScript.map(turn => turn.text.length);
+    const totalChars = characterCounts.reduce((a, b) => a + b, 0);
+    if (totalChars === 0) return -1;
+
+    let accumulatedChars = 0;
+    const progressRatio = podcastCurrentTime / podcastDuration;
+    const targetCharIndex = progressRatio * totalChars;
+
+    for (let i = 0; i < courseData.podcastScript.length; i++) {
+      accumulatedChars += characterCounts[i];
+      if (targetCharIndex <= accumulatedChars) {
+        return i;
+      }
+    }
+    return courseData.podcastScript.length - 1;
+  };
 
   const handleGenerateEbook = async () => {
     const courseId = courseData.courseId || courseData._id;
@@ -320,6 +465,24 @@ export const HeroPage: React.FC = () => {
     }
     return () => clearInterval(interval);
   }, [isGeneratingAudio]);
+
+  useEffect(() => {
+    let interval: any;
+    if (isGeneratingPodcast) {
+      interval = setInterval(() => {
+        setPodcastProgress(prev => {
+          if (prev < 98) {
+            const inc = Math.random() * 1.5 + 0.5; // Realistic progress speed
+            return Math.min(98, prev + inc);
+          }
+          return prev;
+        });
+      }, 600);
+    } else {
+      setPodcastProgress(0);
+    }
+    return () => clearInterval(interval);
+  }, [isGeneratingPodcast]);
 
   const handleCourseClick = (course: Course) => {
     setShowTranscript(false);
@@ -524,130 +687,9 @@ export const HeroPage: React.FC = () => {
                             </div>
                             <span className="px-3 py-1 rounded-full text-xs bg-white/10 border border-white/20 text-white/80">Basic</span>
                           </div>
-                          {courseData.audioUrl ? (
-                            <div className="flex flex-col items-end gap-3">
-                              <div className="flex items-center gap-3">
-                                {courseData.ebookUrl ? (
-                                  <button
-                                    onClick={handleDownloadEbook}
-                                    className="flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold transition-all active:scale-95 border border-emerald-400/30 text-emerald-300 hover:text-white hover:bg-emerald-500/20"
-                                  >
-                                    <BookText className="w-5 h-5" />
-                                    <span>Download Ebook</span>
-                                  </button>
-                                ) : (
-                                  <button
-                                    onClick={() => setShowPublisherModal(true)}
-                                    disabled={isGeneratingEbook}
-                                    className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold transition-all active:scale-95 border border-emerald-400/30 text-emerald-300 hover:text-white hover:bg-emerald-500/20 ${isGeneratingEbook ? 'opacity-50 cursor-not-allowed' : ''}`}
-                                  >
-                                    {isGeneratingEbook ? <Loader2 className="w-5 h-5 animate-spin" /> : <BookText className="w-5 h-5" />}
-                                    <span>{isGeneratingEbook ? 'Generating Ebook...' : 'Generate Ebook'}</span>
-                                  </button>
-                                )}
-                                <button
-                                  onClick={() => setShowTranscript(!showTranscript)}
-                                  className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold transition-all active:scale-95 border ${showTranscript ? 'bg-white/10 border-white/20 text-white' : 'bg-transparent border-white/10 text-white/60 hover:text-white hover:bg-white/5'}`}
-                                >
-                                  <BookOpen className="w-5 h-5" />
-                                  <span>{showTranscript ? 'Hide Transcript' : 'View Transcript'}</span>
-                                </button>
-                                <button
-                                  onClick={() => setShowAudioPlayer(!showAudioPlayer)}
-                                  className="flex items-center gap-2 px-5 py-2.5 bg-lime-500 hover:bg-lime-400 text-black rounded-xl font-bold transition-all shadow-lg shadow-lime-500/20 active:scale-95 group/audio"
-                                >
-                                  <Headphones className="w-5 h-5" />
-                                  <span>{showAudioPlayer ? 'Hide Player' : 'Listen Audio Book'}</span>
-                                </button>
-                              </div>
-                              {showAudioPlayer && (
-                                <div className="animate-fadeInRight flex flex-col gap-4 p-5 bg-white/5 backdrop-blur-xl rounded-2xl border border-white/10 shadow-2xl w-80 lg:w-96">
-                                  <audio
-                                    ref={audioRef}
-                                    src={`${ORIGIN}${courseData.audioUrl}`}
-                                    onTimeUpdate={handleTimeUpdate}
-                                    onLoadedMetadata={handleLoadedMetadata}
-                                    onEnded={() => setIsPlaying(false)}
-                                  />
-
-                                  <div className="flex items-center gap-4">
-                                    <button
-                                      onClick={togglePlay}
-                                      className="w-12 h-12 flex items-center justify-center rounded-full bg-lime-500 hover:bg-lime-400 text-black transition-all shadow-lg active:scale-90"
-                                    >
-                                      {isPlaying ? (
-                                        <div className="flex gap-1">
-                                          <div className="w-1.5 h-4 bg-black rounded-full" />
-                                          <div className="w-1.5 h-4 bg-black rounded-full" />
-                                        </div>
-                                      ) : (
-                                        <div className="ml-1 w-0 h-0 border-t-[8px] border-t-transparent border-l-[12px] border-l-black border-b-[8px] border-b-transparent" />
-                                      )}
-                                    </button>
-
-                                    <div className="flex-1 space-y-1">
-                                      <div className="flex justify-between text-[10px] text-white/50 font-medium">
-                                        <span>{formatTime(currentTime)}</span>
-                                        <span>{formatTime(duration)}</span>
-                                      </div>
-                                      <input
-                                        type="range"
-                                        min="0"
-                                        max={duration || 0}
-                                        value={currentTime}
-                                        onChange={handleSeek}
-                                        className="w-full h-1 bg-white/10 rounded-full appearance-none cursor-pointer accent-lime-500 hover:accent-lime-400 transition-all"
-                                        style={{
-                                          background: `linear-gradient(to right, #84cc16 ${(currentTime / duration) * 100 || 0}%, rgba(255,255,255,0.1) 0%)`
-                                        }}
-                                      />
-                                    </div>
-                                  </div>
-
-                                  <div className="flex items-center justify-between pt-2 border-t border-white/5">
-                                    <div className="flex items-center gap-2">
-                                      <div className="relative">
-                                        <button
-                                          onClick={() => setShowSpeedMenu(!showSpeedMenu)}
-                                          className={`flex items-center gap-1.5 px-2 py-1 rounded-md bg-white/5 transition-all border ${showSpeedMenu ? 'border-lime-500/50 bg-lime-500/10 text-lime-400' : 'border-transparent text-white/40 hover:bg-lime-500/10 hover:text-lime-400'}`}
-                                        >
-                                          <Zap className="w-3 h-3" />
-                                          <span className="text-[10px] font-bold tracking-tighter uppercase">{playbackSpeed}x</span>
-                                        </button>
-
-                                        {showSpeedMenu && (
-                                          <div className="absolute bottom-full left-0 mb-2 p-1 bg-[#0b1220]/95 backdrop-blur-2xl border border-white/10 rounded-lg shadow-2xl z-50 flex flex-col gap-0.5 animate-fadeInUp">
-                                            {[0.5, 1, 1.25, 1.5, 2].map(speed => (
-                                              <button
-                                                key={speed}
-                                                onClick={() => selectSpeed(speed)}
-                                                className={`px-4 py-1.5 rounded-md text-[10px] font-bold transition-all text-left whitespace-nowrap ${playbackSpeed === speed ? 'bg-lime-500 text-black' : 'text-white/60 hover:bg-white/10 hover:text-white'}`}
-                                              >
-                                                {speed === 1 ? 'Normal' : `${speed}x`}
-                                              </button>
-                                            ))}
-                                          </div>
-                                        )}
-                                      </div>
-                                      <div className="w-1 h-1 rounded-full bg-white/10 mx-1" />
-                                      <div className="w-2 h-2 rounded-full bg-lime-500 animate-pulse" />
-                                      <span className="text-[10px] text-white/40 uppercase tracking-widest font-bold">Audio Ready</span>
-                                    </div>
-                                    <button
-                                      onClick={handleDownloadAudio}
-                                      className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-white/70 hover:text-white text-xs font-medium transition-all group"
-                                    >
-                                      <Download className="w-3.5 h-3.5 group-hover:-translate-y-0.5 transition-transform" />
-                                      <span>Download MP3</span>
-                                    </button>
-                                  </div>
-
-
-                                </div>
-                              )}
-                            </div>
-                          ) : (
-                            <div className="flex flex-col items-end gap-2">
+                          <div className="flex flex-col items-end gap-3 z-20">
+                            <div className="flex flex-wrap items-center justify-end gap-3">
+                              {/* Ebook Control */}
                               {courseData.ebookUrl ? (
                                 <button
                                   onClick={handleDownloadEbook}
@@ -658,30 +700,96 @@ export const HeroPage: React.FC = () => {
                                 </button>
                               ) : (
                                 <button
-                                  disabled={isGeneratingEbook}
                                   onClick={() => setShowPublisherModal(true)}
+                                  disabled={isGeneratingEbook}
                                   className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold transition-all active:scale-95 border border-emerald-400/30 text-emerald-300 hover:text-white hover:bg-emerald-500/20 ${isGeneratingEbook ? 'opacity-50 cursor-not-allowed' : ''}`}
                                 >
-                                  {isGeneratingEbook ? (
-                                    <Loader2 className="w-5 h-5 animate-spin" />
-                                  ) : (
-                                    <BookText className="w-5 h-5" />
-                                  )}
+                                  {isGeneratingEbook ? <Loader2 className="w-5 h-5 animate-spin" /> : <BookText className="w-5 h-5" />}
                                   <span>{isGeneratingEbook ? 'Generating Ebook...' : 'Generate Ebook'}</span>
                                 </button>
                               )}
-                              <button
-                                disabled={isGeneratingAudio}
-                                onClick={handleGenerateAudio}
-                                className={`flex items-center gap-2 px-5 py-2.5 bg-lime-500 hover:bg-lime-400 text-black rounded-xl font-bold transition-all shadow-lg shadow-lime-500/20 active:scale-95 group/audio ${isGeneratingAudio ? 'opacity-50 cursor-not-allowed' : ''}`}
-                              >
-                                {isGeneratingAudio ? (
-                                  <Loader2 className="w-5 h-5 animate-spin" />
-                                ) : (
-                                  <Headphones className="w-5 h-5 transition-transform group-hover/audio:-translate-y-0.5" />
-                                )}
-                                <span>{isGeneratingAudio ? 'Generating...' : 'Generate Audio Book'}</span>
-                              </button>
+
+                              {/* Audiobook Control */}
+                              {courseData.audioUrl ? (
+                                <>
+                                  <button
+                                    onClick={() => {
+                                      setShowTranscript(!showTranscript);
+                                      if (!showTranscript) setShowPodcastTranscript(false);
+                                    }}
+                                    className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold transition-all active:scale-95 border ${showTranscript ? 'bg-white/10 border-white/20 text-white' : 'bg-transparent border-white/10 text-white/60 hover:text-white hover:bg-white/5'}`}
+                                  >
+                                    <BookOpen className="w-5 h-5" />
+                                    <span>{showTranscript ? 'Hide Transcript' : 'View Transcript'}</span>
+                                  </button>
+                                  <button
+                                    onClick={() => {
+                                      setShowAudioPlayer(!showAudioPlayer);
+                                      if (!showAudioPlayer) setShowPodcastPlayer(false);
+                                    }}
+                                    className="flex items-center gap-2 px-5 py-2.5 bg-lime-500 hover:bg-lime-400 text-black rounded-xl font-bold transition-all shadow-lg shadow-lime-500/20 active:scale-95 group/audio"
+                                  >
+                                    <Headphones className="w-5 h-5" />
+                                    <span>{showAudioPlayer ? 'Hide Player' : 'Listen Audio Book'}</span>
+                                  </button>
+                                </>
+                              ) : (
+                                <button
+                                  disabled={isGeneratingAudio}
+                                  onClick={handleGenerateAudio}
+                                  className={`flex items-center gap-2 px-5 py-2.5 bg-lime-500 hover:bg-lime-400 text-black rounded-xl font-bold transition-all shadow-lg shadow-lime-500/20 active:scale-95 group/audio ${isGeneratingAudio ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                >
+                                  {isGeneratingAudio ? (
+                                    <Loader2 className="w-5 h-5 animate-spin" />
+                                  ) : (
+                                    <Headphones className="w-5 h-5 transition-transform group-hover/audio:-translate-y-0.5" />
+                                  )}
+                                  <span>{isGeneratingAudio ? 'Generating...' : 'Generate Audio Book'}</span>
+                                </button>
+                              )}
+
+                              {/* Podcast Control */}
+                              {courseData.podcastUrl ? (
+                                <>
+                                  <button
+                                    onClick={() => {
+                                      setShowPodcastTranscript(!showPodcastTranscript);
+                                      if (!showPodcastTranscript) setShowTranscript(false);
+                                    }}
+                                    className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold transition-all active:scale-95 border ${showPodcastTranscript ? 'bg-white/10 border-white/20 text-white' : 'bg-transparent border-white/10 text-white/60 hover:text-white hover:bg-white/5'}`}
+                                  >
+                                    <Sparkles className="w-5 h-5 text-lime-400" />
+                                    <span>{showPodcastTranscript ? 'Hide Podcast Chat' : 'View Podcast Chat'}</span>
+                                  </button>
+                                  <button
+                                    onClick={() => {
+                                      setShowPodcastPlayer(!showPodcastPlayer);
+                                      if (!showPodcastPlayer) setShowAudioPlayer(false);
+                                    }}
+                                    className="flex items-center gap-2 px-5 py-2.5 bg-lime-500 hover:bg-lime-400 text-black rounded-xl font-bold transition-all shadow-lg shadow-lime-500/20 active:scale-95 group/audio"
+                                  >
+                                    <Headphones className="w-5 h-5" />
+                                    <span>{showPodcastPlayer ? 'Hide Podcast' : 'Listen Podcast'}</span>
+                                  </button>
+                                </>
+                              ) : (
+                                <button
+                                  disabled={isGeneratingPodcast}
+                                  onClick={handleGeneratePodcast}
+                                  className={`flex items-center gap-2 px-5 py-2.5 bg-lime-500 hover:bg-lime-400 text-black rounded-xl font-bold transition-all shadow-lg shadow-lime-500/20 active:scale-95 group/audio ${isGeneratingPodcast ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                >
+                                  {isGeneratingPodcast ? (
+                                    <Loader2 className="w-5 h-5 animate-spin" />
+                                  ) : (
+                                    <Sparkles className="w-5 h-5 transition-transform group-hover/audio:-translate-y-0.5 text-lime-400 animate-pulse" />
+                                  )}
+                                  <span>{isGeneratingPodcast ? 'Generating...' : 'Generate Podcast'}</span>
+                                </button>
+                              )}
+                            </div>
+
+                            {/* Progress bars container */}
+                            <div className="flex flex-col gap-2 mt-2">
                               {isGeneratingAudio && (
                                 <div className="w-48 space-y-1.5 animate-fadeIn">
                                   <div className="flex justify-between text-[8px] font-black uppercase tracking-widest text-white/50 px-1">
@@ -696,8 +804,193 @@ export const HeroPage: React.FC = () => {
                                   </div>
                                 </div>
                               )}
+
+                              {isGeneratingPodcast && (
+                                <div className="w-48 space-y-1.5 animate-fadeIn">
+                                  <div className="flex justify-between text-[8px] font-black uppercase tracking-widest text-white/50 px-1">
+                                    <span>Podcast Progress</span>
+                                    <span>{Math.round(podcastProgress)}%</span>
+                                  </div>
+                                  <div className="w-full bg-white/5 rounded-full h-1 overflow-hidden border border-white/10 p-0.5">
+                                    <div
+                                      className="bg-gradient-to-r from-lime-500 to-emerald-500 h-full rounded-full transition-all duration-500 ease-out"
+                                      style={{ width: `${podcastProgress}%` }}
+                                    />
+                                  </div>
+                                </div>
+                              )}
                             </div>
-                          )}
+
+                            {/* Audiobook Player UI */}
+                            {showAudioPlayer && (
+                              <div className="animate-fadeInRight flex flex-col gap-4 p-5 bg-white/5 backdrop-blur-xl rounded-2xl border border-white/10 shadow-2xl w-80 lg:w-96 mt-3">
+                                <audio
+                                  ref={audioRef}
+                                  src={`${ORIGIN}${courseData.audioUrl}`}
+                                  onTimeUpdate={handleTimeUpdate}
+                                  onLoadedMetadata={handleLoadedMetadata}
+                                  onEnded={() => setIsPlaying(false)}
+                                />
+
+                                <div className="flex items-center gap-4">
+                                  <button
+                                    onClick={togglePlay}
+                                    className="w-12 h-12 flex items-center justify-center rounded-full bg-lime-500 hover:bg-lime-400 text-black transition-all shadow-lg active:scale-90"
+                                  >
+                                    {isPlaying ? (
+                                      <div className="flex gap-1 animate-pulse">
+                                        <div className="w-1.5 h-4 bg-black rounded-full" />
+                                        <div className="w-1.5 h-4 bg-black rounded-full" />
+                                      </div>
+                                    ) : (
+                                      <div className="ml-1 w-0 h-0 border-t-[8px] border-t-transparent border-l-[12px] border-l-black border-b-[8px] border-b-transparent" />
+                                    )}
+                                  </button>
+
+                                  <div className="flex-1 space-y-1">
+                                    <div className="flex justify-between text-[10px] text-white/50 font-medium">
+                                      <span>{formatTime(currentTime)}</span>
+                                      <span>{formatTime(duration)}</span>
+                                    </div>
+                                    <input
+                                      type="range"
+                                      min="0"
+                                      max={duration || 0}
+                                      value={currentTime}
+                                      onChange={handleSeek}
+                                      className="w-full h-1 bg-white/10 rounded-full appearance-none cursor-pointer accent-lime-500 hover:accent-lime-400 transition-all"
+                                      style={{
+                                        background: `linear-gradient(to right, #84cc16 ${(currentTime / duration) * 100 || 0}%, rgba(255,255,255,0.1) 0%)`
+                                      }}
+                                    />
+                                  </div>
+                                </div>
+
+                                <div className="flex items-center justify-between pt-2 border-t border-white/5">
+                                  <div className="flex items-center gap-2">
+                                    <div className="relative">
+                                      <button
+                                        onClick={() => setShowSpeedMenu(!showSpeedMenu)}
+                                        className={`flex items-center gap-1.5 px-2 py-1 rounded-md bg-white/5 transition-all border ${showSpeedMenu ? 'border-lime-500/50 bg-lime-500/10 text-lime-400' : 'border-transparent text-white/40 hover:bg-lime-500/10 hover:text-lime-400'}`}
+                                      >
+                                        <Zap className="w-3 h-3" />
+                                        <span className="text-[10px] font-bold tracking-tighter uppercase">{playbackSpeed}x</span>
+                                      </button>
+
+                                      {showSpeedMenu && (
+                                        <div className="absolute bottom-full left-0 mb-2 p-1 bg-[#0b1220]/95 backdrop-blur-2xl border border-white/10 rounded-lg shadow-2xl z-50 flex flex-col gap-0.5 animate-fadeInUp">
+                                          {[0.5, 1, 1.25, 1.5, 2].map(speed => (
+                                            <button
+                                              key={speed}
+                                              onClick={() => selectSpeed(speed)}
+                                              className={`px-4 py-1.5 rounded-md text-[10px] font-bold transition-all text-left whitespace-nowrap ${playbackSpeed === speed ? 'bg-lime-500 text-black' : 'text-white/60 hover:bg-white/10 hover:text-white'}`}
+                                            >
+                                              {speed === 1 ? 'Normal' : `${speed}x`}
+                                            </button>
+                                          ))}
+                                        </div>
+                                      )}
+                                    </div>
+                                    <div className="w-1 h-1 rounded-full bg-white/10 mx-1" />
+                                    <div className="w-2 h-2 rounded-full bg-lime-500 animate-pulse" />
+                                    <span className="text-[10px] text-white/40 uppercase tracking-widest font-bold">Audio Ready</span>
+                                  </div>
+                                  <button
+                                    onClick={handleDownloadAudio}
+                                    className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-white/70 hover:text-white text-xs font-medium transition-all group"
+                                  >
+                                    <Download className="w-3.5 h-3.5 group-hover:-translate-y-0.5 transition-transform" />
+                                    <span>Download MP3</span>
+                                  </button>
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Podcast Player UI */}
+                            {showPodcastPlayer && (
+                              <div className="animate-fadeInRight flex flex-col gap-4 p-5 bg-white/5 backdrop-blur-xl rounded-2xl border border-white/10 shadow-2xl w-80 lg:w-96 mt-3">
+                                <audio
+                                  ref={podcastAudioRef}
+                                  src={`${ORIGIN}${courseData.podcastUrl}`}
+                                  onTimeUpdate={handlePodcastTimeUpdate}
+                                  onLoadedMetadata={handlePodcastLoadedMetadata}
+                                  onEnded={() => setIsPodcastPlaying(false)}
+                                />
+
+                                <div className="flex items-center gap-4">
+                                  <button
+                                    onClick={togglePodcastPlay}
+                                    className="w-12 h-12 flex items-center justify-center rounded-full bg-lime-500 hover:bg-lime-400 text-black transition-all shadow-lg active:scale-90"
+                                  >
+                                    {isPodcastPlaying ? (
+                                      <div className="flex gap-1 animate-pulse">
+                                        <div className="w-1.5 h-4 bg-black rounded-full" />
+                                        <div className="w-1.5 h-4 bg-black rounded-full" />
+                                      </div>
+                                    ) : (
+                                      <div className="ml-1 w-0 h-0 border-t-[8px] border-t-transparent border-l-[12px] border-l-black border-b-[8px] border-b-transparent" />
+                                    )}
+                                  </button>
+
+                                  <div className="flex-1 space-y-1">
+                                    <div className="flex justify-between text-[10px] text-white/50 font-medium">
+                                      <span>{formatTime(podcastCurrentTime)}</span>
+                                      <span>{formatTime(podcastDuration)}</span>
+                                    </div>
+                                    <input
+                                      type="range"
+                                      min="0"
+                                      max={podcastDuration || 0}
+                                      value={podcastCurrentTime}
+                                      onChange={handlePodcastSeek}
+                                      className="w-full h-1 bg-white/10 rounded-full appearance-none cursor-pointer accent-lime-500 hover:accent-lime-400 transition-all"
+                                      style={{
+                                        background: `linear-gradient(to right, #84cc16 ${(podcastCurrentTime / podcastDuration) * 100 || 0}%, rgba(255,255,255,0.1) 0%)`
+                                      }}
+                                    />
+                                  </div>
+                                </div>
+
+                                <div className="flex items-center justify-between pt-2 border-t border-white/5">
+                                  <div className="flex items-center gap-2">
+                                    <div className="relative">
+                                      <button
+                                        onClick={() => setShowPodcastSpeedMenu(!showPodcastSpeedMenu)}
+                                        className={`flex items-center gap-1.5 px-2 py-1 rounded-md bg-white/5 transition-all border ${showPodcastSpeedMenu ? 'border-lime-500/50 bg-lime-500/10 text-lime-400' : 'border-transparent text-white/40 hover:bg-lime-500/10 hover:text-lime-400'}`}
+                                      >
+                                        <Zap className="w-3 h-3" />
+                                        <span className="text-[10px] font-bold tracking-tighter uppercase">{podcastSpeed}x</span>
+                                      </button>
+
+                                      {showPodcastSpeedMenu && (
+                                        <div className="absolute bottom-full left-0 mb-2 p-1 bg-[#0b1220]/95 backdrop-blur-2xl border border-white/10 rounded-lg shadow-2xl z-50 flex flex-col gap-0.5 animate-fadeInUp">
+                                          {[0.5, 1, 1.25, 1.5, 2].map(speed => (
+                                            <button
+                                              key={speed}
+                                              onClick={() => selectPodcastSpeed(speed)}
+                                              className={`px-4 py-1.5 rounded-md text-[10px] font-bold transition-all text-left whitespace-nowrap ${podcastSpeed === speed ? 'bg-lime-500 text-black' : 'text-white/60 hover:bg-white/10 hover:text-white'}`}
+                                            >
+                                              {speed === 1 ? 'Normal' : `${speed}x`}
+                                            </button>
+                                          ))}
+                                        </div>
+                                      )}
+                                    </div>
+                                    <div className="w-1 h-1 rounded-full bg-white/10 mx-1" />
+                                    <div className="w-2 h-2 rounded-full bg-lime-500 animate-pulse" />
+                                    <span className="text-[10px] text-white/40 uppercase tracking-widest font-bold">Podcast Ready</span>
+                                  </div>
+                                  <button
+                                    onClick={handleDownloadPodcast}
+                                    className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-white/70 hover:text-white text-xs font-medium transition-all group"
+                                  >
+                                    <Download className="w-3.5 h-3.5 group-hover:-translate-y-0.5 transition-transform" />
+                                    <span>Download MP3</span>
+                                  </button>
+                                </div>
+                              </div>
+                            )}
+                          </div>
                         </div>
 
                         <h2 className="text-3xl lg:text-4xl font-semibold mb-2">
@@ -766,6 +1059,82 @@ export const HeroPage: React.FC = () => {
                                     className="text-xs font-bold text-lime-400 hover:text-lime-300 uppercase tracking-widest border border-lime-500/20 px-4 py-2 rounded-lg hover:bg-lime-500/5 transition-all"
                                   >
                                     Generate Audio & Transcript Now
+                                  </button>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        )}
+
+                        {showPodcastTranscript && (
+                          <div className="mt-10 animate-fadeInUp">
+                            <h3 className="text-xl font-bold mb-6 flex items-center gap-2 text-white/90">
+                              <div className="w-1 h-6 bg-lime-500 rounded-full" />
+                              Course Dialogue: Podcast Edition
+                            </h3>
+                            <div className="bg-white/5 border border-white/10 rounded-3xl p-6 sm:p-8 backdrop-blur-sm relative group overflow-hidden max-h-[500px] overflow-y-auto space-y-6">
+                              {courseData.podcastScript && courseData.podcastScript.length > 0 ? (
+                                courseData.podcastScript.map((turn, index) => {
+                                  const isActive = index === getActivePodcastBubbleIndex();
+                                  const isHostA = turn.speaker.toLowerCase().includes('hosta') || turn.speaker.toLowerCase().includes('alex');
+                                  
+                                  return (
+                                    <div
+                                      key={index}
+                                      className={`flex gap-4 items-start transition-all duration-300 ${
+                                        isHostA ? 'justify-start' : 'justify-end'
+                                      }`}
+                                    >
+                                      {isHostA && (
+                                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-400 to-indigo-600 flex-shrink-0 flex items-center justify-center border border-blue-400/30 text-white font-black text-xs shadow-md">
+                                          AL
+                                        </div>
+                                      )}
+                                      
+                                      <div
+                                        className={`max-w-[70%] rounded-2xl px-5 py-3.5 transition-all duration-500 relative ${
+                                          isHostA
+                                            ? 'bg-slate-800/60 border border-slate-700/50 text-slate-100'
+                                            : 'bg-emerald-950/50 border border-emerald-500/20 text-emerald-100'
+                                        } ${
+                                          isActive
+                                            ? 'ring-2 ring-lime-400 border-lime-400/50 shadow-[0_0_20px_rgba(132,204,22,0.3)] scale-[1.02]'
+                                            : ''
+                                        }`}
+                                      >
+                                        <div className="flex justify-between items-center gap-2 mb-1">
+                                          <span className="text-[10px] uppercase tracking-widest font-black opacity-60">
+                                            {isHostA ? 'Alex (Co-host)' : 'Sam (Host)'}
+                                          </span>
+                                          {isActive && (
+                                            <div className="flex gap-0.5 items-center">
+                                              <span className="w-1 h-2 bg-lime-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                                              <span className="w-1 h-3 bg-lime-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                                              <span className="w-1 h-2 bg-lime-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                                            </div>
+                                          )}
+                                        </div>
+                                        <p className="text-sm sm:text-base leading-relaxed whitespace-pre-line">
+                                          {turn.text}
+                                        </p>
+                                      </div>
+
+                                      {!isHostA && (
+                                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-emerald-400 to-teal-600 flex-shrink-0 flex items-center justify-center border border-emerald-400/30 text-white font-black text-xs shadow-md">
+                                          SM
+                                        </div>
+                                      )}
+                                    </div>
+                                  );
+                                })
+                              ) : (
+                                <div className="text-center py-8 relative z-10">
+                                  <p className="text-white/40 italic mb-4">No podcast has been generated for this course yet.</p>
+                                  <button
+                                    onClick={handleGeneratePodcast}
+                                    className="text-xs font-bold text-lime-400 hover:text-lime-300 uppercase tracking-widest border border-lime-500/20 px-4 py-2 rounded-lg hover:bg-lime-500/5 transition-all"
+                                  >
+                                    Generate Podcast Now
                                   </button>
                                 </div>
                               )}
@@ -845,42 +1214,6 @@ export const HeroPage: React.FC = () => {
                           <p className="text-gray-400 text-xs leading-relaxed">Scroll down to explore each module in detail. You can preview the slide deck, view and copy the generated voice script, and download the slides in PPT format for each module.</p>
                         </div>
                       </div>
-                    </div>
-
-                    <div className="h-px w-full bg-gradient-to-r from-transparent via-gray-700/50 to-transparent my-8"></div>
-
-                    <h4 className="text-xs font-black text-white uppercase tracking-[0.15em] mb-6 flex items-center gap-2">
-                      <span className="p-1.5 rounded bg-gray-800/80 border border-gray-700 shadow-sm text-sm">
-                        <User className="w-4 h-4 text-lime-400" />
-                      </span>
-                      Profile & Persona
-                    </h4>
-
-                    <div className="grid grid-cols-1 gap-3">
-                      <button
-                        onClick={() => {/* Trigger avatar change logic if available */ }}
-                        className="flex items-center gap-4 p-4 rounded-2xl bg-white/5 border border-white/10 hover:bg-white/10 hover:border-lime-500/30 transition-all group/btn"
-                      >
-                        <div className="w-10 h-10 rounded-full bg-lime-500/10 flex items-center justify-center border border-lime-500/20 group-hover/btn:bg-lime-500/20 transition-colors">
-                          <Camera className="w-5 h-5 text-lime-400" />
-                        </div>
-                        <div className="text-left">
-                          <p className="text-white font-bold text-sm">Change Avatar</p>
-                          <p className="text-gray-400 text-[10px] uppercase tracking-widest font-medium">Customize your look</p>
-                        </div>
-                      </button>
-
-                      <button
-                        className="flex items-center gap-4 p-4 rounded-2xl bg-white/5 border border-white/10 hover:bg-white/10 hover:border-emerald-500/30 transition-all group/btn"
-                      >
-                        <div className="w-10 h-10 rounded-full bg-emerald-500/10 flex items-center justify-center border border-emerald-500/20 group-hover/btn:bg-emerald-500/20 transition-colors">
-                          <Shield className="w-5 h-5 text-emerald-400" />
-                        </div>
-                        <div className="text-left">
-                          <p className="text-white font-bold text-sm">Account Settings</p>
-                          <p className="text-gray-400 text-[10px] uppercase tracking-widest font-medium">Security & preferences</p>
-                        </div>
-                      </button>
                     </div>
 
                     <div className="mt-8 p-4 rounded-xl bg-lime-500/5 border border-lime-500/10 backdrop-blur-sm relative overflow-hidden group-hover:bg-lime-500/10 transition-colors duration-500">

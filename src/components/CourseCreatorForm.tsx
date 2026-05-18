@@ -6,6 +6,7 @@ import React, {
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Check,
+  Clock,
   ChevronDown,
   ChevronRight,
   ChevronLeft,
@@ -175,6 +176,8 @@ const CourseCreatorForm: React.FC = () => {
   const [isBatchGenerating, setIsBatchGenerating] = useState(false);
   const [batchSlidesProgress, setBatchSlidesProgress] = useState({ completed: 0, total: 0 });
   const [batchSlidesDisplayProgress, setBatchSlidesDisplayProgress] = useState(0);
+  const [batchGeneratingModuleId, setBatchGeneratingModuleId] = useState<number | null>(null);
+  const [batchSelectedModuleIdForPreview, setBatchSelectedModuleIdForPreview] = useState<number | null>(null);
   const [refineProgress, setRefineProgress] = useState(0);
   const [themeFilter, setThemeFilter] = useState('All');
   const [isThemeModalOpen, setIsThemeModalOpen] = useState(false);
@@ -195,14 +198,10 @@ const CourseCreatorForm: React.FC = () => {
   const scrollRefGuidance = useRef<HTMLDivElement>(null);
   const scrollRefModules = useRef<HTMLDivElement>(null);
 
-  const avatarDropdownRef = useRef<HTMLDivElement>(null);
   const notifDropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (avatarDropdownRef.current && !avatarDropdownRef.current.contains(event.target as Node)) {
-        setAvatarDropdownOpen(false);
-      }
       if (notifDropdownRef.current && !notifDropdownRef.current.contains(event.target as Node)) {
         setNotifOpen(false);
       }
@@ -216,7 +215,6 @@ const CourseCreatorForm: React.FC = () => {
 
   const [avatarUrl, setAvatarUrl] = useState<string | null>(localStorage.getItem('avatar'));
   const [userInfo, setUserInfo] = useState<{ username: string; email: string } | null>(null);
-  const [avatarDropdownOpen, setAvatarDropdownOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
   const [notifications, setNotifications] = useState<any[]>([]);
 
@@ -940,12 +938,15 @@ const CourseCreatorForm: React.FC = () => {
 
     setIsBatchGenerating(true);
     setBatchSlidesProgress({ completed: 0, total: modulesToGenerate.length });
+    setBatchGeneratingModuleId(modulesToGenerate[0]?.moduleNumber || null);
+    setBatchSelectedModuleIdForPreview(null);
 
     try {
       const newUrls: Record<number, string> = { ...orionUrlByModule };
       let completedCount = 0;
 
       for (const mod of modulesToGenerate) {
+        setBatchGeneratingModuleId(mod.moduleNumber);
         try {
           const resp = await fetch(`${API_BASE}/generate-module-slides-gamma`, {
             method: 'POST',
@@ -966,6 +967,7 @@ const CourseCreatorForm: React.FC = () => {
             if (data.gammaUrl) {
               newUrls[mod.moduleNumber] = data.gammaUrl;
               completedCount++;
+              setBatchSelectedModuleIdForPreview(mod.moduleNumber);
             }
           } else {
             const errData = await resp.json().catch(() => ({}));
@@ -990,6 +992,8 @@ const CourseCreatorForm: React.FC = () => {
       toast.error(error.message || "An unexpected error occurred.");
     } finally {
       setIsBatchGenerating(false);
+      setBatchGeneratingModuleId(null);
+      setBatchSelectedModuleIdForPreview(null);
       setStep(5);
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
@@ -2084,58 +2088,6 @@ const CourseCreatorForm: React.FC = () => {
                             </div>
                           ))
                         )}
-                      </div>
-                    </motion.div>
-                  </>
-                )}
-              </AnimatePresence>
-            </div>
-
-            {/* Profile Dropdown */}
-            <div className="relative" ref={avatarDropdownRef}>
-              <button
-                className="group flex items-center gap-3 p-1 pr-3 rounded-full bg-white/5 border border-white/10 hover:bg-white/10 hover:border-lime-500/30 transition-all active:scale-95"
-                onClick={() => setAvatarDropdownOpen(!avatarDropdownOpen)}
-              >
-                <div className="relative">
-                  {avatarUrl ? (
-                    <img src={avatarUrl} alt="avatar" className="w-9 h-9 rounded-full object-cover border border-white/20 transition-transform group-hover:scale-110" />
-                  ) : (
-                    <div className="w-9 h-9 rounded-full bg-gradient-to-br from-lime-500/20 to-emerald-500/20 flex items-center justify-center border border-white/10">
-                      <UserIcon className="w-5 h-5 text-lime-400" />
-                    </div>
-                  )}
-                  <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-lime-500 border-2 border-black rounded-full" />
-                </div>
-                <div className="hidden sm:flex flex-col items-start">
-                  <span className="text-xs font-bold text-white leading-tight">{userInfo?.username || 'User'}</span>
-                  <ChevronDown size={12} className={`text-white/40 transition-transform duration-300 ${avatarDropdownOpen ? 'rotate-180' : ''}`} />
-                </div>
-              </button>
-
-              <AnimatePresence>
-                {avatarDropdownOpen && (
-                  <>
-                    <motion.div
-                      initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                      animate={{ opacity: 1, y: 0, scale: 1 }}
-                      exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                      className="absolute top-full right-0 mt-3 w-64 bg-[#0A0F1A]/95 backdrop-blur-2xl border border-white/10 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] overflow-hidden z-50 ring-1 ring-white/5"
-                    >
-                      <div className="p-4 border-b border-white/5 bg-white/[0.02]">
-                        <div className="flex flex-col gap-1">
-                          <span className="text-sm font-bold text-white truncate">{userInfo?.username || 'User'}</span>
-                          <span className="text-[10px] text-lime-400/60 font-medium truncate uppercase tracking-widest">{userInfo?.email || 'email@example.com'}</span>
-                        </div>
-                      </div>
-                      <div className="p-2">
-                        <button
-                          onClick={handleLogout}
-                          className="w-full px-4 py-3 text-sm text-left text-red-400 hover:bg-red-500/10 rounded-xl flex items-center gap-3 transition-all font-bold group"
-                        >
-                          <LogOut className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
-                          Logout Account
-                        </button>
                       </div>
                     </motion.div>
                   </>
@@ -3453,7 +3405,7 @@ const CourseCreatorForm: React.FC = () => {
                               >
                                 <div className="flex justify-between items-start mb-4">
                                   <h4 className="font-black text-3xl text-white flex items-center gap-4">
-                                    <span className="w-12 h-12 rounded-2xl bg-lime-500/10 text-lime-500 flex items-center justify-center text-lg font-black ring-1 ring-lime-500/20">{mod.id}</span>
+                                    <span className="px-5 h-12 rounded-2xl bg-lime-500/10 text-lime-500 flex items-center justify-center text-lg font-black ring-1 ring-lime-500/20 whitespace-nowrap">Module {mod.id}</span>
                                     {mod.title}
                                   </h4>
                                 </div>
@@ -3827,7 +3779,7 @@ const CourseCreatorForm: React.FC = () => {
                         {previewModules.map((mod) => (
                           <div key={mod.id} className="group bg-gray-800/30 hover:bg-gray-800/60 p-6 rounded-3xl border border-gray-800 transition-all">
                             <div className="flex justify-between items-center mb-1">
-                              <h5 className="font-bold text-lg text-white group-hover:text-lime-400 transition-colors">{mod.title}</h5>
+                              <h5 className="font-bold text-lg text-white group-hover:text-lime-400 transition-colors">Module {mod.id}: {mod.title}</h5>
                               <span className="text-[10px] font-black bg-gray-700 px-2 py-1 rounded text-gray-400 tracking-tighter">CERTIFIED</span>
                             </div>
                             <div className="flex items-center gap-1.5 mb-4">
@@ -4020,79 +3972,180 @@ const CourseCreatorForm: React.FC = () => {
         }
       `}</style>
 
-      {/* Batch Slide Generation Progress Overlay */}
+      {/* Batch Slide Generation Progress Overlay / Dynamic Live Preview Dashboard */}
       <AnimatePresence>
         {isBatchGenerating && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md"
+            className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-8 bg-black/85 backdrop-blur-xl"
           >
             <motion.div
-              initial={{ scale: 0.9, opacity: 0, y: 20 }}
+              initial={{ scale: 0.95, opacity: 0, y: 20 }}
               animate={{ scale: 1, opacity: 1, y: 0 }}
-              className="bg-[#12141a] border border-white/10 w-full max-w-md rounded-3xl p-8 shadow-2xl relative overflow-hidden"
+              className="bg-[#0B0C10] border border-white/[0.08] w-full max-w-7xl h-[88vh] rounded-[2.5rem] p-6 sm:p-8 shadow-[0_24px_60px_-15px_rgba(0,0,0,0.8)] relative overflow-hidden flex flex-col md:flex-row gap-8 backdrop-blur-3xl"
             >
-              <div className="absolute top-0 right-0 w-32 h-32 bg-lime-500/10 rounded-full blur-3xl -mr-16 -mt-16"></div>
-
-              <div className="relative z-10 flex flex-col items-center">
-                <div className="relative w-44 h-44 mb-6">
-                  <div className="absolute inset-0 border-4 border-gray-800 rounded-full" />
-                  <div
-                    className="absolute inset-0 rounded-full transition-all duration-700 ease-out shadow-[0_0_20px_rgba(132,204,22,0.15)]"
-                    style={{
-                      background: `conic-gradient(#84cc16 ${batchSlidesDisplayProgress}%, transparent ${batchSlidesDisplayProgress}%)`,
-                      WebkitMask: 'radial-gradient(transparent 64%, black 65%)',
-                      mask: 'radial-gradient(transparent 64%, black 65%)'
-                    }}
-                  />
-                  <div className="absolute inset-0 border-4 border-lime-500/20 rounded-full border-t-transparent animate-spin" />
-                  <div className="absolute inset-0 flex flex-col items-center justify-center">
-                    <Monitor className="text-lime-400 w-10 h-10 animate-pulse mb-1 drop-shadow-[0_0_8px_rgba(163,230,53,0.5)]" />
-                    <div className="flex items-baseline gap-0.5">
-                      <span className="text-4xl font-black text-white tracking-tight">{Math.round(batchSlidesDisplayProgress)}</span>
-                      <span className="text-lg font-bold text-lime-500">%</span>
+              {/* Left Side: Progress tracker and Scrollable Module list */}
+              <div className="w-full md:w-[38%] flex flex-col h-full min-h-0 border-r border-white/5 pr-0 md:pr-8">
+                <div className="relative shrink-0 flex items-center gap-5 mb-6">
+                  {/* Progress Circle container */}
+                  <div className="relative w-24 h-24 shrink-0">
+                    <div className="absolute inset-0 border-4 border-gray-800 rounded-full" />
+                    <div
+                      className="absolute inset-0 rounded-full transition-all duration-500 ease-out shadow-[0_0_15px_rgba(132,204,22,0.15)]"
+                      style={{
+                        background: `conic-gradient(#84cc16 ${batchSlidesDisplayProgress}%, transparent ${batchSlidesDisplayProgress}%)`,
+                        WebkitMask: 'radial-gradient(transparent 64%, black 65%)',
+                        mask: 'radial-gradient(transparent 64%, black 65%)'
+                      }}
+                    />
+                    <div className="absolute inset-0 border-4 border-lime-500/10 rounded-full border-t-transparent animate-spin" />
+                    <div className="absolute inset-0 flex flex-col items-center justify-center">
+                      <Zap className="text-lime-400 w-6 h-6 animate-pulse mb-0.5" />
+                      <div className="flex items-baseline gap-0.5">
+                        <span className="text-xl font-black text-white tracking-tight">{Math.round(batchSlidesDisplayProgress)}</span>
+                        <span className="text-[10px] font-bold text-lime-500">%</span>
+                      </div>
                     </div>
+                  </div>
+
+                  <div className="text-left">
+                    <h3 className="text-xl sm:text-2xl font-black text-white mb-1.5 tracking-tight flex items-center gap-2">
+                      Live Studio <Sparkles className="w-5 h-5 text-lime-400 animate-pulse" />
+                    </h3>
+                    <p className="text-gray-400 text-xs leading-relaxed max-w-xs">
+                      Orion is baking slide layouts. Click any <span className="text-lime-400 font-bold">Ready</span> module to watch the slides!
+                    </p>
                   </div>
                 </div>
 
-                <h3 className="text-2xl font-bold text-white mb-2">Preparing Your Slides</h3>
-                <p className="text-gray-400 animate-pulse font-mono uppercase text-xs tracking-widest mb-6">Please avoid refreshing the page or navigating back while the slides are being generated, as this may interrupt the generation process.</p>
-
-                <div className="w-full max-w-md">
-                  <div className="flex justify-between text-[10px] font-black uppercase tracking-widest text-gray-500 mb-2 px-1">
-                    <span>Progress</span>
-                    <span>Module {Math.min(Math.floor((batchSlidesDisplayProgress / 100) * batchSlidesProgress.total) + 1, batchSlidesProgress.total)} of {batchSlidesProgress.total}</span>
+                {/* Progress bar info */}
+                <div className="shrink-0 mb-6 bg-gray-900/40 border border-white/5 p-4 rounded-2xl">
+                  <div className="flex justify-between text-[10px] font-black uppercase tracking-widest text-gray-400 mb-2">
+                    <span>Batch Generation</span>
+                    <span>Module {Math.min(batchSlidesProgress.completed + 1, batchSlidesProgress.total)} of {batchSlidesProgress.total}</span>
                   </div>
-                  <div className="w-full bg-gray-800/50 rounded-full h-3 overflow-hidden border border-gray-700 p-0.5 shadow-inner">
+                  <div className="w-full bg-gray-800/40 rounded-full h-2 overflow-hidden border border-gray-800 p-0.5">
                     <div
-                      className="bg-gradient-to-r from-lime-500 via-emerald-500 to-teal-500 h-full rounded-full transition-all duration-700 ease-out shadow-[0_0_15px_rgba(132,204,22,0.4)]"
+                      className="bg-gradient-to-r from-lime-500 via-emerald-500 to-teal-500 h-full rounded-full transition-all duration-700 ease-out shadow-[0_0_12px_rgba(132,204,22,0.4)]"
                       style={{ width: `${batchSlidesDisplayProgress}%` }}
                     />
                   </div>
-                  <div className="mt-4 flex flex-wrap justify-center gap-2">
-                    {Array.from({ length: batchSlidesProgress.total }).map((_, idx) => (
-                      <div
-                        key={idx}
-                        className={`w-2 h-2 rounded-full transition-all duration-500 ${idx < Math.floor((batchSlidesDisplayProgress / 100) * batchSlidesProgress.total) ? 'bg-lime-500 shadow-[0_0_8px_rgba(132,204,22,0.6)]' : idx === Math.floor((batchSlidesDisplayProgress / 100) * batchSlidesProgress.total) ? 'bg-lime-500/40 animate-pulse' : 'bg-gray-800'}`}
-                      />
-                    ))}
-                  </div>
                 </div>
 
-                <div className="mt-8 pt-6 border-t border-white/5 w-full text-center">
-                  {/* <button
-                    onClick={() => {
-                      setIsBatchGenerating(false);
-                      setStep(5);
-                      toast.info("Continuing to Launchpad. Slides will keep generating in the background.");
-                    }}
-                    className="text-gray-400 hover:text-white text-xs font-bold uppercase tracking-widest transition-colors flex items-center justify-center gap-2 mx-auto"
-                  >
-                    Skip & Enter Launchpad <ChevronRight size={14} />
-                  </button> */}
+                <div className="shrink-0 text-xs font-black uppercase tracking-widest text-gray-500 mb-3 text-left">Modules status</div>
+
+                {/* Module List scrollbox */}
+                <div className="flex-1 overflow-y-auto pr-2 space-y-2.5 custom-scrollbar min-h-0">
+                  {previewModules.map((mod) => {
+                    const isGenerated = !!orionUrlByModule[mod.id];
+                    const isGenerating = batchGeneratingModuleId === mod.id;
+                    const activePreviewId = batchSelectedModuleIdForPreview || batchGeneratingModuleId || (previewModules[0]?.id);
+                    const isActive = activePreviewId === mod.id;
+
+                    return (
+                      <button
+                        key={mod.id}
+                        onClick={() => isGenerated && setBatchSelectedModuleIdForPreview(mod.id)}
+                        className={`w-full text-left p-4 rounded-2xl border transition-all duration-300 flex items-center justify-between gap-4 group/item ${
+                          isActive
+                            ? 'border-lime-500/80 bg-lime-500/[0.07] shadow-[0_0_20px_rgba(132,204,22,0.05)]'
+                            : isGenerated
+                            ? 'border-gray-800/60 bg-gray-900/20 hover:border-gray-700 hover:bg-gray-800/30'
+                            : 'border-gray-800/40 bg-gray-900/10 cursor-not-allowed opacity-60'
+                        }`}
+                        disabled={!isGenerated}
+                      >
+                        <div className="flex items-center gap-3 truncate">
+                          <span className={`w-8 h-8 rounded-lg flex items-center justify-center font-bold text-xs shrink-0 ${
+                            isActive
+                              ? 'bg-lime-500 text-black'
+                              : isGenerated
+                              ? 'bg-lime-500/10 text-lime-400'
+                              : 'bg-gray-800 text-gray-500'
+                          }`}>
+                            {mod.id}
+                          </span>
+                          <span className={`text-sm font-bold truncate transition-colors ${
+                            isActive ? 'text-white' : 'text-gray-300 group-hover/item:text-white'
+                          }`}>
+                            {mod.title}
+                          </span>
+                        </div>
+
+                        {/* Status indicators */}
+                        <div className="shrink-0 flex items-center gap-2">
+                          {isGenerated ? (
+                            <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-[9px] font-black uppercase text-emerald-400">
+                              <Check className="w-3 h-3" /> Ready
+                            </span>
+                          ) : isGenerating ? (
+                            <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-lime-500/10 border border-lime-500/20 text-[9px] font-black uppercase text-lime-400 animate-pulse">
+                              <Loader2 className="w-3 h-3 animate-spin" /> Baking
+                            </span>
+                          ) : (
+                            <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-gray-800 border border-gray-700 text-[9px] font-black uppercase text-gray-500">
+                              <Clock className="w-3 h-3" /> Queued
+                            </span>
+                          )}
+                        </div>
+                      </button>
+                    );
+                  })}
                 </div>
+              </div>
+
+              {/* Right Side: Interactive Slide Preview container */}
+              <div className="flex-1 flex flex-col h-full min-h-0 bg-black/50 border border-white/[0.04] rounded-3xl overflow-hidden relative shadow-inner">
+                {(() => {
+                  const activePreviewId = batchSelectedModuleIdForPreview || batchGeneratingModuleId || (previewModules[0]?.id);
+                  const activeUrl = activePreviewId ? orionUrlByModule[activePreviewId] : null;
+
+                  if (activeUrl) {
+                    return (
+                      <div className="w-full h-full flex flex-col relative animate-in fade-in duration-500">
+                        {/* Interactive floating indicator */}
+                        <div className="absolute top-4 left-4 z-10 flex items-center gap-2 px-3 py-1.5 rounded-xl bg-black/60 border border-lime-500/20 backdrop-blur-md text-[10px] font-black uppercase tracking-widest text-lime-400 shadow-lg">
+                          <div className="w-2 h-2 rounded-full bg-lime-400 animate-ping" />
+                          <span>Previewing Module {activePreviewId} Generated Deck</span>
+                        </div>
+                        <iframe
+                          src={activeUrl.replace('/docs/', '/embed/').replace('/view/', '/embed/')}
+                          className="w-full h-full border-0 bg-transparent relative z-0"
+                          allowFullScreen
+                          title="Generated Slide deck preview"
+                        />
+                      </div>
+                    );
+                  } else {
+                    return (
+                      <div className="flex-1 flex flex-col items-center justify-center p-8 text-center relative overflow-hidden h-full">
+                        {/* Glow spots */}
+                        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-lime-500/5 rounded-full blur-[80px] pointer-events-none animate-pulse" />
+                        <div className="absolute -bottom-10 -right-10 w-48 h-48 bg-emerald-500/5 rounded-full blur-[60px] pointer-events-none" />
+
+                        <div className="relative z-10 flex flex-col items-center max-w-sm">
+                          <div className="relative p-6 bg-lime-500/10 border border-lime-500/20 rounded-full mb-6">
+                            <Monitor className="w-10 h-10 text-lime-400 animate-pulse" />
+                            <div className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-lime-500 animate-ping" />
+                          </div>
+
+                          <h3 className="text-lg font-black text-white tracking-wide mb-2">
+                            Designing Module {activePreviewId} Slides
+                          </h3>
+                          <p className="text-gray-400 text-xs leading-relaxed mb-6 max-w-xs font-medium">
+                            Orion is compiling layouts, templates, and interactive media segments in the background. The live deck will auto-load here in seconds.
+                          </p>
+
+                          <div className="flex items-center gap-2 text-[10px] font-bold tracking-widest text-lime-500/60 uppercase">
+                            <Loader2 className="w-3.5 h-3.5 animate-spin" /> Working...
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  }
+                })()}
               </div>
             </motion.div>
           </motion.div>

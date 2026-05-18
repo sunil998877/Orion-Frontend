@@ -25,6 +25,45 @@ function App() {
   const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
 
+  // Modal State: 'none', 'forgot', 'reset'
+  const [modalMode, setModalMode] = useState<'none' | 'forgot' | 'reset'>('none');
+  
+  // Forgot password form state
+  const [forgotEmail, setForgotEmail] = useState('');
+  const [forgotIsLoading, setForgotIsLoading] = useState(false);
+  const [forgotSuccessMessage, setForgotSuccessMessage] = useState('');
+  const [forgotError, setForgotError] = useState('');
+
+  // Reset password form state
+  const [resetData, setResetData] = useState({
+    email: '',
+    token: '',
+    newPassword: '',
+    confirmPassword: ''
+  });
+  const [resetIsLoading, setResetIsLoading] = useState(false);
+  const [resetSuccessMessage, setResetSuccessMessage] = useState('');
+  const [resetError, setResetError] = useState('');
+  const [showResetPassword, setShowResetPassword] = useState(false);
+
+  // Check URL query parameters on mount to auto-trigger Reset Password Modal
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const token = params.get('token');
+    const email = params.get('email');
+    if (token && email) {
+      setResetData({
+        email: email,
+        token: token,
+        newPassword: '',
+        confirmPassword: ''
+      });
+      setModalMode('reset');
+      // Clean up search parameters so they don't linger in URL
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+  }, []);
+
   const validateForm = () => {
     const newErrors: { email?: string; password?: string } = {};
 
@@ -100,7 +139,107 @@ function App() {
       setErrors({
         general: 'An error occurred. Please try again later.',
       });
-            setIsLoading(false);
+      setIsLoading(false);
+    }
+  };
+
+  const handleForgotSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!forgotEmail) {
+      setForgotError('Email is required');
+      return;
+    }
+    if (!/\S+@\S+\.\S+/.test(forgotEmail)) {
+      setForgotError('Please enter a valid email address');
+      return;
+    }
+
+    setForgotIsLoading(true);
+    setForgotError('');
+    setForgotSuccessMessage('');
+
+    try {
+      const response = await fetch(`${API_BASE}/forgot-password`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email: forgotEmail }),
+      });
+      const data = await response.json();
+      
+      if (response.ok) {
+        toast.success('Reset code generated successfully!');
+        setForgotSuccessMessage(data.message || 'Reset link sent successfully!');
+        setResetData(prev => ({ ...prev, email: forgotEmail }));
+        
+        // Switch to reset modal step automatically after 2.5 seconds
+        setTimeout(() => {
+          setModalMode('reset');
+          setForgotSuccessMessage('');
+        }, 2500);
+      } else {
+        setForgotError(data.message || 'Something went wrong. Please try again.');
+      }
+    } catch (error) {
+      setForgotError('An error occurred. Please try again later.');
+    } finally {
+      setForgotIsLoading(false);
+    }
+  };
+
+  const handleResetSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const { email, token, newPassword, confirmPassword } = resetData;
+
+    if (!email || !token || !newPassword || !confirmPassword) {
+      setResetError('All fields are required');
+      return;
+    }
+
+    if (newPassword.length < 6) {
+      setResetError('Password must be at least 6 characters');
+      return;
+    }
+
+    if (newPassword !== confirmPassword) {
+      setResetError('Passwords do not match');
+      return;
+    }
+
+    setResetIsLoading(true);
+    setResetError('');
+    setResetSuccessMessage('');
+
+    try {
+      const response = await fetch(`${API_BASE}/reset-password`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, token, newPassword }),
+      });
+      const data = await response.json();
+
+      if (response.ok) {
+        toast.success('Password reset successful! Please log in.');
+        setResetSuccessMessage(data.message || 'Password reset successful!');
+        
+        // Reset states
+        setResetData({ email: '', token: '', newPassword: '', confirmPassword: '' });
+        
+        // Close modal
+        setTimeout(() => {
+          setModalMode('none');
+          setResetSuccessMessage('');
+        }, 2500);
+      } else {
+        setResetError(data.message || 'Invalid or expired token.');
+      }
+    } catch (error) {
+      setResetError('An error occurred. Please try again later.');
+    } finally {
+      setResetIsLoading(false);
     }
   };
 
@@ -212,9 +351,18 @@ function App() {
                       </div>
 
                       <div className="text-sm">
-                        <a href="#" className="font-medium text-white/70 hover:text-white transition-colors">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setForgotEmail(formData.email); // prefill with whatever is in the email input currently
+                            setForgotError('');
+                            setForgotSuccessMessage('');
+                            setModalMode('forgot');
+                          }}
+                          className="font-medium text-white/70 hover:text-white transition-colors focus:outline-none"
+                        >
                           Forgot password?
-                        </a>
+                        </button>
                       </div>
                     </div>
                     <div className="w-full mt-6 flex items-center justify-center">
@@ -268,6 +416,212 @@ function App() {
             </div>
           </div>
         </div>
+        {/* Modal Backdrop and Card */}
+        {modalMode !== 'none' && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-4 animate-fade-in transition-all duration-300">
+            <div className="relative w-full max-w-md rounded-2xl bg-zinc-950 border border-white/10 shadow-2xl p-6 md:p-8 animate-scale-in">
+              {/* Close Button */}
+              <button
+                type="button"
+                onClick={() => setModalMode('none')}
+                className="absolute top-4 right-4 text-white/50 hover:text-white transition-colors"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-x"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+              </button>
+
+              {modalMode === 'forgot' ? (
+                <form onSubmit={handleForgotSubmit} className="space-y-5">
+                  <div className="space-y-2">
+                    <h3 className="text-2xl font-bold text-white bg-gradient-to-r from-lime-400 to-emerald-400 bg-clip-text text-transparent">Reset Password</h3>
+                    <p className="text-sm text-white/70">Enter your email and we'll generate a 6-digit secure OTP code.</p>
+                  </div>
+
+                  {forgotError && (
+                    <div className="rounded-md bg-red-500/10 p-3 border border-red-500/30 text-sm text-red-200">
+                      {forgotError}
+                    </div>
+                  )}
+
+                  {forgotSuccessMessage && (
+                    <div className="rounded-md bg-emerald-500/10 p-3 border border-emerald-500/30 text-sm text-emerald-200">
+                      {forgotSuccessMessage}
+                    </div>
+                  )}
+
+                  <div>
+                    <label htmlFor="forgot-email" className="mb-1.5 block text-sm font-medium text-white/80">
+                      Email address
+                    </label>
+                    <div className="relative">
+                      <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">
+                        <Mail size={18} />
+                      </div>
+                      <input
+                        id="forgot-email"
+                        type="email"
+                        required
+                        value={forgotEmail}
+                        onChange={(e) => setForgotEmail(e.target.value)}
+                        className="block w-full rounded-lg border border-white/10 bg-black px-3 py-2.5 pl-10 shadow-sm text-white placeholder:text-gray-700 focus:border-lime-500/50 focus:outline-none focus:ring-1 focus:ring-lime-500/30 transition-all"
+                        placeholder="you@example.com"
+                      />
+                    </div>
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={forgotIsLoading}
+                    className="w-full rounded-lg bg-gradient-to-r from-lime-400 to-emerald-500 py-3 text-sm font-medium text-white shadow-lg transition-all duration-200 hover:from-lime-300 hover:to-emerald-400 disabled:opacity-50 font-semibold"
+                  >
+                    {forgotIsLoading ? 'Generating Reset Token...' : 'Generate Reset Token'}
+                  </button>
+
+                  <div className="text-center pt-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setResetError('');
+                        setResetSuccessMessage('');
+                        setModalMode('reset');
+                      }}
+                      className="text-xs text-lime-400 hover:text-lime-300 transition-colors underline"
+                    >
+                      Already have a 6-digit OTP code? Click here
+                    </button>
+                  </div>
+                </form>
+              ) : (
+                <form onSubmit={handleResetSubmit} className="space-y-4">
+                  <div className="space-y-1">
+                    <h3 className="text-2xl font-bold text-white bg-gradient-to-r from-lime-400 to-emerald-400 bg-clip-text text-transparent">Set New Password</h3>
+                    <p className="text-xs text-white/70">Enter your email, 6-digit OTP code, and the new password below.</p>
+                  </div>
+
+                  {resetError && (
+                    <div className="rounded-md bg-red-500/10 p-3 border border-red-500/30 text-sm text-red-200">
+                      {resetError}
+                    </div>
+                  )}
+
+                  {resetSuccessMessage && (
+                    <div className="rounded-md bg-emerald-500/10 p-3 border border-emerald-500/30 text-sm text-emerald-200">
+                      {resetSuccessMessage}
+                    </div>
+                  )}
+
+                  <div>
+                    <label htmlFor="reset-email" className="mb-1 block text-xs font-medium text-white/80">
+                      Email address
+                    </label>
+                    <div className="relative">
+                      <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">
+                        <Mail size={16} />
+                      </div>
+                      <input
+                        id="reset-email"
+                        type="email"
+                        required
+                        value={resetData.email}
+                        onChange={(e) => setResetData(prev => ({ ...prev, email: e.target.value }))}
+                        className="block w-full rounded-lg border border-white/10 bg-black px-3 py-2 pl-10 text-white placeholder:text-gray-700 focus:border-lime-500/50 focus:outline-none focus:ring-1 focus:ring-lime-500/30"
+                        placeholder="you@example.com"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label htmlFor="reset-token" className="mb-1 block text-xs font-medium text-white/80">
+                      6-Digit OTP Code
+                    </label>
+                    <div className="relative">
+                      <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">
+                        <Lock size={16} />
+                      </div>
+                      <input
+                        id="reset-token"
+                        type="text"
+                        required
+                        value={resetData.token}
+                        onChange={(e) => setResetData(prev => ({ ...prev, token: e.target.value }))}
+                        className="block w-full rounded-lg border border-white/10 bg-black px-3 py-2 pl-10 text-white placeholder:text-gray-700 focus:border-lime-500/50 focus:outline-none focus:ring-1 focus:ring-lime-500/30"
+                        placeholder="Enter 6-digit OTP code"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label htmlFor="reset-new-password" className="mb-1 block text-xs font-medium text-white/80">
+                      New Password
+                    </label>
+                    <div className="relative">
+                      <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">
+                        <Lock size={16} />
+                      </div>
+                      <input
+                        id="reset-new-password"
+                        type={showResetPassword ? 'text' : 'password'}
+                        required
+                        value={resetData.newPassword}
+                        onChange={(e) => setResetData(prev => ({ ...prev, newPassword: e.target.value }))}
+                        className="block w-full rounded-lg border border-white/10 bg-black px-3 py-2 pl-10 pr-10 text-white placeholder:text-gray-700 focus:border-lime-500/50 focus:outline-none focus:ring-1 focus:ring-lime-500/30"
+                        placeholder="••••••••"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowResetPassword(!showResetPassword)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-white transition-colors"
+                      >
+                        {showResetPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                      </button>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label htmlFor="reset-confirm-password" className="mb-1 block text-xs font-medium text-white/80">
+                      Confirm New Password
+                    </label>
+                    <div className="relative">
+                      <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">
+                        <Lock size={16} />
+                      </div>
+                      <input
+                        id="reset-confirm-password"
+                        type={showResetPassword ? 'text' : 'password'}
+                        required
+                        value={resetData.confirmPassword}
+                        onChange={(e) => setResetData(prev => ({ ...prev, confirmPassword: e.target.value }))}
+                        className="block w-full rounded-lg border border-white/10 bg-black px-3 py-2 pl-10 pr-10 text-white placeholder:text-gray-700 focus:border-lime-500/50 focus:outline-none focus:ring-1 focus:ring-lime-500/30"
+                        placeholder="••••••••"
+                      />
+                    </div>
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={resetIsLoading}
+                    className="w-full rounded-lg bg-gradient-to-r from-lime-400 to-emerald-500 py-3 text-sm font-semibold text-white shadow-lg transition-all duration-200 hover:from-lime-300 hover:to-emerald-400 disabled:opacity-50 mt-2"
+                  >
+                    {resetIsLoading ? 'Resetting Password...' : 'Reset Password'}
+                  </button>
+
+                  <div className="text-center mt-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setForgotError('');
+                        setForgotSuccessMessage('');
+                        setModalMode('forgot');
+                      }}
+                      className="text-xs text-white/50 hover:text-white transition-colors"
+                    >
+                      ← Back to Request Reset Code
+                    </button>
+                  </div>
+                </form>
+              )}
+            </div>
+          </div>
+        )}
       </div>
     </PageTransition>
   );
