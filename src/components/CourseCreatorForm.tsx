@@ -1999,15 +1999,17 @@ const CourseCreatorForm: React.FC = () => {
       </div>
     );
 
-    const WarningSign = () => (
-      <div className="absolute right-3 top-1/2 -translate-y-1/2 text-amber-500 animate-pulse">
-        <Zap size={18} fill="currentColor" />
-      </div>
-    );
+  };
 
-    return (
-      <div className="min-h-screen bg-black text-gray-100 font-sans selection:bg-lime-500 selection:text-black">
-        <div className="fixed top-0 left-0 w-full h-full pointer-events-none overflow-hidden">
+  const WarningSign = () => (
+    <div className="absolute right-3 top-1/2 -translate-y-1/2 text-amber-500 animate-pulse">
+      <Zap size={18} fill="currentColor" />
+    </div>
+  );
+
+  return (
+    <div className="min-h-screen bg-black text-gray-100 font-sans selection:bg-lime-500 selection:text-black">
+      <div className="fixed top-0 left-0 w-full h-full pointer-events-none overflow-hidden">
           <div className="absolute top-[-10%] right-[-10%] w-[50%] h-[50%] bg-emerald-900/20 blur-[120px] rounded-full" />
           <div className="absolute bottom-[-10%] left-[-10%] w-[50%] h-[50%] bg-lime-900/10 blur-[120px] rounded-full" />
         </div>
@@ -4336,7 +4338,6 @@ const CourseCreatorForm: React.FC = () => {
           )}
         </AnimatePresence>
       </div>
-      );
-  };    
+  );
 };
 export default CourseCreatorForm;

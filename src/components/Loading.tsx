@@ -39,9 +39,9 @@ const Loading = () => {
           animation-timing-function: linear;
           animation-iteration-count: infinite;
         }
-       
-        
-       ation-iteration-count: infinite;
+
+        .streak {
+          animation-iteration-count: infinite;
         }
         @keyframes streak-fly {
           from { transform: translateX(250px); opacity: 0; }
