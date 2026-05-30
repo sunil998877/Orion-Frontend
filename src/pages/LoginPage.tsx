@@ -172,12 +172,6 @@ function App() {
         toast.success('Reset code generated successfully!');
         setForgotSuccessMessage(data.message || 'Reset link sent successfully!');
         setResetData(prev => ({ ...prev, email: forgotEmail }));
-        
-        // Switch to reset modal step automatically after 2.5 seconds
-        setTimeout(() => {
-          setModalMode('reset');
-          setForgotSuccessMessage('');
-        }, 2500);
       } else {
         setForgotError(data.message || 'Something went wrong. Please try again.');
       }

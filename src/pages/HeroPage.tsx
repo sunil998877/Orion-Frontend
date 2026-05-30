@@ -228,12 +228,17 @@ export const HeroPage: React.FC = () => {
       } else {
         const err = await resp.json();
         console.error('Podcast generation failed:', err.message);
-        toast.error(`Generation failed: ${err.message}`);
+        const msg = err.message || 'Unknown error';
+        if (msg.toLowerCase().includes('multiple voice') || msg.toLowerCase().includes('retry shortly')) {
+          toast.error('Transient API error — please try again in a few seconds.');
+        } else {
+          toast.error(`Generation failed: ${msg}`);
+        }
         setIsGeneratingPodcast(false);
       }
     } catch (err: any) {
       console.error('Podcast generation error:', err);
-      toast.error(`Error: ${err.message || 'Something went wrong'}`);
+      toast.error(`Error: ${err.message || 'Something went wrong'}. Please try again.`);
       setIsGeneratingPodcast(false);
     }
   };
