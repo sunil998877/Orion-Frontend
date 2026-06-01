@@ -1,8 +1,7 @@
 import { toast } from 'react-toastify';
 import { ORIGIN } from './api';
 
-const API_ORIGIN = ORIGIN || 'https://orion-back-4.ls
-lsonrender.com/api';
+const API_ORIGIN = ORIGIN || 'https://orion-back-4.onrender.com/api';
 
 function handleAuthError() {
   localStorage.removeItem('token');
