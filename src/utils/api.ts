@@ -1,6 +1,11 @@
-export const API_BASE = (import.meta.env.VITE_API_BASE_URL || 'https://orion-back-developerevoke-6846s-projects.vercel.app/api')
-  .replace(/\/$/, '')
-  .replace(/\/login$/, '');
+const getApiBase = () => {
+  let url = import.meta.env.VITE_API_BASE_URL || 'https://orion-back-developerevoke-6846s-projects.vercel.app/api';
+  // Strip any frozen deployment hashes if they exist (e.g., orion-back-6yz7is0op-...)
+  url = url.replace(/orion-back-[a-z0-9]+-developerevoke/, 'orion-back-developerevoke');
+  return url.replace(/\/$/, '').replace(/\/login$/, '');
+};
+
+export const API_BASE = getApiBase();
 
 export function buildUrl(path: string) {
   if (!path) return API_BASE;
