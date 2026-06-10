@@ -114,7 +114,6 @@ function App() {
         body: JSON.stringify(formData),
       });
       const data = await response.json();
-      console.log('Login response:', data.token);
       if (response.ok) {
         localStorage.setItem('token', data.token);
         // Clear potential stale avatar from previous session
