@@ -18,6 +18,7 @@ import {
   Globe,
   Zap,
   Sparkles,
+  Book,
   BookOpen,
   Monitor,
   Eye,
@@ -3826,11 +3827,22 @@ const CourseCreatorForm: React.FC = () => {
                                 </div>
                               </div>
                               {prefetchedSlidesMap[mod.id]?.Slides?.length > 0 && (
-                                <div className="pt-2">
+                                <div className="pt-2 flex gap-2">
+                                  {orionUrlByModule[mod.id] && (
+                                    <button
+                                      onClick={() => openSlidesPreview(mod.id, true)}
+                                      disabled={isPreviewLoading}
+                                      className="flex-1 flex items-center justify-center gap-2 py-2 text-[10px] font-black uppercase rounded-xl border border-lime-500/20 text-lime-400 bg-lime-500/10 hover:bg-lime-500/20 transition-all disabled:opacity-50"
+                                      type="button"
+                                    >
+                                      <Book size={14} />
+                                      View Deck
+                                    </button>
+                                  )}
                                   <button
                                     onClick={() => downloadModulePPTX(mod.id)}
                                     disabled={downloadingModuleId === mod.id}
-                                    className="w-full flex items-center justify-center gap-2 py-2 text-[10px] font-black uppercase bg-lime-500/10 hover:bg-lime-500/20 rounded-xl border border-lime-500/20 text-lime-400 transition-all disabled:opacity-50"
+                                    className="flex-1 flex items-center justify-center gap-2 py-2 text-[10px] font-black uppercase bg-lime-500/10 hover:bg-lime-500/20 rounded-xl border border-lime-500/20 text-lime-400 transition-all disabled:opacity-50"
                                     type="button"
                                   >
                                     {downloadingModuleId === mod.id ? (
