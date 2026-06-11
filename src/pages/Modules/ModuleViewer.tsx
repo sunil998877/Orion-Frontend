@@ -191,53 +191,35 @@ export const ModuleViewer: React.FC<ModuleViewerProps> = ({ moduleData, onClose,
                   </div>
                 </section>
 
-                <div className="grid md:grid-cols-2 gap-12 mt-8">
-                  <section>
-                    <div className="flex items-center gap-3 mb-6">
-                      <div className="w-1 h-6 bg-lime-500 rounded-full" />
-                      <h2 className="text-lg font-black uppercase tracking-widest text-white">Progress Check A</h2>
-                    </div>
-                    {moduleData.Content.Quizzes?.slice(0, 1).map((quiz: any, i: number) => (
-                      <div key={i} className="space-y-4">
-                        {quiz.Questions?.slice(0, 2).map((q: string, j: number) => (
-                          <div key={j} className="bg-white/[0.03] p-6 rounded-2xl border border-white/5 hover:border-white/10 transition-all">
-                            <p className="text-white font-bold mb-3 flex gap-3">
-                              <span className="text-lime-500 italic">Q.</span>
-                              {q}
-                            </p>
-                            <div className="pl-7 text-sm text-gray-500 font-medium">
-                              <span className="text-gray-600 mr-2 font-black uppercase text-[9px] tracking-widest">Key Result:</span>
-                              {quiz.Answers?.[j]}
+                <section>
+                  <div className="flex items-center gap-3 mb-6">
+                    <div className="w-1 h-6 bg-lime-500 rounded-full" />
+                    <h2 className="text-lg font-black uppercase tracking-widest text-white">Progress Check</h2>
+                  </div>
+                  <div className="space-y-6">
+                    {moduleData.Content.Quizzes?.map((quiz: any, i: number) => (
+                      <div key={i}>
+                        {quiz.QuizDescription && (
+                          <p className="text-sm text-gray-500 font-medium mb-4 italic">{quiz.QuizDescription}</p>
+                        )}
+                        <div className="space-y-4">
+                          {quiz.Questions?.map((q: string, j: number) => (
+                            <div key={j} className="bg-white/[0.03] p-6 rounded-2xl border border-white/5 hover:border-white/10 transition-all">
+                              <p className="text-white font-bold mb-3 flex gap-3">
+                                <span className="text-lime-500 italic">Q.</span>
+                                {q}
+                              </p>
+                              <div className="pl-7 text-sm text-gray-500 font-medium">
+                                <span className="text-gray-600 mr-2 font-black uppercase text-[9px] tracking-widest">Key Result:</span>
+                                {quiz.Answers?.[j]}
+                              </div>
                             </div>
-                          </div>
-                        ))}
+                          ))}
+                        </div>
                       </div>
                     ))}
-                  </section>
-
-                  <section>
-                    <div className="flex items-center gap-3 mb-6">
-                      <div className="w-1 h-6 bg-lime-500 rounded-full" />
-                      <h2 className="text-lg font-black uppercase tracking-widest text-white">Progress Check B</h2>
-                    </div>
-                    {moduleData.Content.Quizzes?.slice(-1).map((quiz: any, i: number) => (
-                      <div key={i} className="space-y-4">
-                        {quiz.Questions?.slice(0, 2).map((q: string, j: number) => (
-                          <div key={j} className="bg-white/[0.03] p-6 rounded-2xl border border-white/5 hover:border-white/10 transition-all">
-                            <p className="text-white font-bold mb-3 flex gap-3">
-                              <span className="text-lime-500 italic">Q.</span>
-                              {q}
-                            </p>
-                            <div className="pl-7 text-sm text-gray-500 font-medium">
-                              <span className="text-gray-600 mr-2 font-black uppercase text-[9px] tracking-widest">Key Result:</span>
-                              {quiz.Answers?.[j]}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    ))}
-                  </section>
-                </div>
+                  </div>
+                </section>
 
                 <section className="mt-8">
                    <div className="flex items-center gap-3 mb-6">
