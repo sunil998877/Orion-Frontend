@@ -249,10 +249,10 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           <div className="flex items-center gap-3">
               <div className="relative" ref={notifDropdownRef}>
                 <button
-                  className="p-2 rounded-full bg-white/5 border border-white/10 hover:bg-white/10 transition relative"
+                  className={`p-2 rounded-full border transition-all relative ${notifOpen ? 'bg-white/15 border-white/20' : 'bg-white/5 border-white/10 hover:bg-white/10'}`}
                   onClick={() => { setNotifOpen(v => !v); if (!notifOpen) fetchNotifications(); }}
                 >
-                  <Bell className="w-5 h-5 text-white/70" />
+                  <Bell className={`w-5 h-5 transition-all ${notifOpen ? 'text-white' : 'text-white/70'}`} />
                   {notifications.some(n => !n.isRead) && (
                     <span className="absolute top-1 right-2 w-2 h-2 bg-lime-500 rounded-full animate-pulse" />
                   )}

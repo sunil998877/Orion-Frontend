@@ -2052,7 +2052,7 @@ const CourseCreatorForm: React.FC = () => {
               {/* Notification Button */}
               <div className="relative" ref={notifDropdownRef}>
                 <button
-                  className={`p-2 rounded-full border transition-all relative group ${notifOpen ? 'bg-lime-500/10 border-lime-500/50' : 'bg-white/5 border-white/10 hover:bg-white/10'}`}
+                  className={`p-2 rounded-full border transition-all relative group ${notifOpen ? 'bg-lime-500/25 border-lime-500/70' : 'bg-white/5 border-white/10 hover:bg-white/10'}`}
                   onClick={() => { setNotifOpen(!notifOpen); if (!notifOpen) fetchNotifications(); }}
                 >
                   <Bell className={`w-5 h-5 transition-all ${notifOpen ? 'text-lime-400' : 'text-white/70 group-hover:text-lime-400 group-hover:rotate-12'}`} />
