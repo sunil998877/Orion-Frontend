@@ -259,18 +259,18 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                 </button>
 
                 {notifOpen && (
-                  <div className="absolute top-full right-0 mt-2 z-50 w-80 bg-white/10 border border-white/20 backdrop-blur-md rounded-xl shadow-xl overflow-hidden">
+                  <div className="absolute top-full right-0 mt-2 z-50 w-80 bg-[#0A0F1A]/95 border border-white/20 backdrop-blur-md rounded-xl shadow-xl overflow-hidden">
                     <div className="px-4 py-3 border-b border-white/10 flex items-center justify-between">
                       <span className="text-sm text-white/80">Notifications</span>
                       <div className="flex gap-2">
                         <button
-                          className="text-xs px-2 py-1 rounded bg-lime-500/20 text-lime-300 hover:bg-lime-500/30 transition"
+                          className="text-xs px-2 py-1 rounded bg-lime-500/30 text-lime-200 hover:bg-lime-500/40 transition"
                           onClick={(e) => { e.stopPropagation(); markAllRead(); }}
                         >
                           Mark all read
                         </button>
                         <button
-                          className="text-xs px-2 py-1 rounded bg-red-500/20 text-red-300 hover:bg-red-500/30 transition"
+                          className="text-xs px-2 py-1 rounded bg-red-500/30 text-red-200 hover:bg-red-500/40 transition"
                           onClick={(e) => { e.stopPropagation(); removeAllNotifications(); }}
                         >
                           Remove all
@@ -279,7 +279,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                     </div>
                     <div className="max-h-64 overflow-auto">
                       {notifications.length === 0 ? (
-                        <div className="px-4 py-6 text-center text-white/60 text-sm">No notifications</div>
+                        <div className="px-4 py-6 text-center text-white/80 text-sm">No notifications</div>
                       ) : (
                         notifications.map((n, i) => (
                           <div key={i} className={`px-4 py-3 border-b border-white/5 hover:bg-white/5 transition flex items-start gap-3 ${!n.isRead ? 'bg-white/[0.02]' : ''}`}>
@@ -287,8 +287,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                               }`} />
                             <div className="flex-1">
                               <div className="text-sm text-white font-medium">{n.title}</div>
-                              <div className="text-xs text-white/60 mt-0.5 line-clamp-2">{n.message}</div>
-                              <div className="text-[10px] text-white/40 mt-1">
+                              <div className="text-xs text-white/85 mt-0.5 line-clamp-2">{n.message}</div>
+                              <div className="text-[10px] text-white/60 mt-1">
                                 {new Date(n.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                               </div>
                             </div>

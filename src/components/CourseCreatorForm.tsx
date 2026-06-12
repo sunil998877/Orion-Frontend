@@ -2071,16 +2071,16 @@ const CourseCreatorForm: React.FC = () => {
                         className="absolute top-full right-0 mt-3 w-80 bg-[#0A0F1A]/95 backdrop-blur-2xl border border-white/10 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] overflow-hidden z-[100] ring-1 ring-white/5"
                       >
                         <div className="px-4 py-3 border-b border-white/5 bg-white/[0.02] flex items-center justify-between">
-                          <span className="text-xs font-bold text-white uppercase tracking-widest opacity-60">Notifications</span>
+                          <span className="text-xs font-bold text-white uppercase tracking-widest opacity-80">Notifications</span>
                           <div className="flex gap-2">
                             <button
-                              className="text-[10px] px-2 py-1 rounded-lg bg-lime-500/10 text-lime-400 hover:bg-lime-500/20 transition font-bold"
+                              className="text-[10px] px-2 py-1 rounded-lg bg-lime-500/20 text-lime-300 hover:bg-lime-500/30 transition font-bold"
                               onClick={markAllRead}
                             >
                               Mark All Read
                             </button>
                             <button
-                              className="text-[10px] px-2 py-1 rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500/20 transition font-bold"
+                              className="text-[10px] px-2 py-1 rounded-lg bg-red-500/20 text-red-300 hover:bg-red-500/30 transition font-bold"
                               onClick={removeAllNotifications}
                             >
                               Clear
@@ -2091,9 +2091,9 @@ const CourseCreatorForm: React.FC = () => {
                           {notifications.length === 0 ? (
                             <div className="px-4 py-12 text-center flex flex-col items-center gap-3">
                               <div className="w-12 h-12 rounded-full bg-white/5 flex items-center justify-center">
-                                <Bell className="w-6 h-6 text-white/20" />
+                                <Bell className="w-6 h-6 text-white/40" />
                               </div>
-                              <span className="text-sm text-white/40 font-medium">No new notifications</span>
+                              <span className="text-sm text-white/60 font-medium">No new notifications</span>
                             </div>
                           ) : (
                             notifications.map((n, i) => (
@@ -2102,8 +2102,8 @@ const CourseCreatorForm: React.FC = () => {
                                 className={`px-4 py-4 border-b border-white/5 hover:bg-white/[0.03] transition-colors relative group ${!n.isRead ? 'bg-lime-500/[0.02]' : ''}`}
                               >
                                 {!n.isRead && <div className="absolute left-0 top-0 bottom-0 w-1 bg-lime-400" />}
-                                <p className="text-sm text-white/90 font-medium leading-relaxed">{n.message}</p>
-                                <p className="text-[10px] text-white/30 mt-2 font-bold uppercase tracking-wider">
+                                <p className="text-sm text-white font-medium leading-relaxed">{n.message}</p>
+                                <p className="text-[10px] text-white/50 mt-2 font-bold uppercase tracking-wider">
                                   {new Date(n.createdAt).toLocaleDateString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
                                 </p>
                               </div>
