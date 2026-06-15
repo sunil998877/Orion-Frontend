@@ -11,7 +11,6 @@ import {
   ChevronRight,
   ChevronLeft,
   Loader2,
-  Upload,
   FileText,
   Target,
   Palette,
@@ -1880,15 +1879,6 @@ const CourseCreatorForm: React.FC = () => {
     }
   };
 
-  const uploadedFiles = ((courseData as any).files || []) as File[];
-
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files || []);
-    if (files.length === 0) return;
-    const next = [...uploadedFiles, ...files];
-    updateCourseData({ ...({ files: next } as any) });
-  };
-
   const isStepComplete = (s: number) => {
     switch (s) {
       case 1:
@@ -2970,218 +2960,6 @@ const CourseCreatorForm: React.FC = () => {
                   </motion.div>
                 )}
 
-                {step === 3 && (
-                  <motion.div
-                    key="step3"
-                    variants={stepVariants}
-                    initial="hidden"
-                    animate="visible"
-                    exit="exit"
-                    className="flex flex-col xl:flex-row gap-8 xl:gap-12 min-h-[600px]"
-                  >
-                    {/* Left Side: Form Inputs */}
-                    <div className="flex-1 xl:w-[55%] bg-[#0A0A0B]/60 backdrop-blur-xl border border-white/5 rounded-[2.5rem] p-8 md:p-12 shadow-2xl relative overflow-hidden group flex flex-col">
-                      <div className="bg-lime-500/10 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6">
-                        <Upload className="text-lime-500 w-10 h-10" />
-                      </div>
-
-                      <div className="w-full border-2 border-dashed border-gray-800 rounded-3xl p-12 hover:border-lime-500/50 transition-all cursor-pointer bg-gray-800/20 group text-center">
-                        <input type="file" multiple className="hidden" id="file-upload" accept=".pdf,.docx,.txt,.jpg,.jpeg,.png" onChange={handleFileChange} />
-                        <label htmlFor="file-upload" className="cursor-pointer">
-                          <p className="text-gray-300 font-medium group-hover:text-lime-400 transition-colors">Click to browse or drag & drop files here</p>
-                          <p className="text-gray-500 text-sm mt-2">Support for PDF, DOCX, TXT, JPG, PNG (Optional)</p>
-                        </label>
-                      </div>
-
-                      {/* URL Injection Section */}
-                      <div className="mt-10 w-full border-t border-gray-800 pt-8">
-                        <label className="block text-sm font-semibold text-gray-400 mb-4 uppercase tracking-wider text-left">External Resources (URLs)</label>
-                        <div className="flex gap-2">
-                          <div className="relative flex-1">
-                            <Link className={`absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 transition-colors ${urlError ? 'text-red-400' : 'text-gray-500'}`} />
-                            <input
-                              type="text"
-                              placeholder="https://..."
-                              value={urlInput}
-                              onChange={(e) => {
-                                setUrlInput(e.target.value);
-                                if (urlError) setUrlError(null);
-                              }}
-                              onKeyDown={(e) => e.key === 'Enter' && handleAddUrl()}
-                              className={`w-full bg-gray-800/50 border rounded-xl py-3 pl-10 pr-10 focus:ring-2 outline-none transition-all ${urlError
-                                ? 'border-red-500/50 ring-red-500/20 shadow-[0_0_15px_rgba(239,68,68,0.1)]'
-                                : 'border-gray-700 focus:ring-lime-500'
-                                }`}
-                            />
-                            {urlError && (
-                              <div className="absolute right-3 top-1/2 -translate-y-1/2 text-red-500 animate-pulse">
-                                <AlertCircle size={18} />
-                              </div>
-                            )}
-                          </div>
-                          <button
-                            type="button"
-                            onClick={handleAddUrl}
-                            className="px-4 bg-lime-500 text-black rounded-xl font-bold hover:bg-lime-400 transition-all flex items-center gap-2"
-                          >
-                            <Plus size={18} />
-                            Add
-                          </button>
-                        </div>
-                        {urlError ? (
-                          <p className="mt-2 text-left text-xs text-red-400 animate-in fade-in slide-in-from-top-1 duration-200">{urlError}</p>
-                        ) : (
-                          <p className="mt-2 text-left text-xs text-gray-500">Add links to articles, videos, or websites for the AI to analyze.</p>
-                        )}
-
-                        {courseData.urls && courseData.urls.length > 0 && (
-                          <div className="mt-6 space-y-2 text-left">
-                            {courseData.urls.map((url, i) => (
-                              <div key={`url-${i}`} className="flex items-center gap-3 bg-gray-800/30 p-3 rounded-xl border border-gray-700/50 group/url">
-                                <a
-                                  href={url}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="p-1.5 bg-lime-500/10 hover:bg-lime-500/20 rounded-lg transition-all text-lime-500"
-                                  title="Open link"
-                                >
-                                  <ExternalLink size={16} />
-                                </a>
-                                <span className="text-sm truncate flex-1 text-gray-300">{url}</span>
-                                <button
-                                  type="button"
-                                  onClick={() => handleRemoveUrl(url)}
-                                  className="p-1.5 opacity-0 group-hover/url:opacity-100 hover:bg-red-500/20 hover:text-red-400 rounded-lg transition-all text-gray-500"
-                                  title="Remove source"
-                                >
-                                  <Trash2 size={16} />
-                                </button>
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-
-                      {uploadedFiles.length > 0 && (
-                        <div className="mt-8 w-full text-left">
-                          <h4 className="text-xs font-bold text-gray-500 uppercase mb-3">Uploaded Assets ({uploadedFiles.length})</h4>
-                          <div className="space-y-2">
-                            {uploadedFiles.map((f, i) => (
-                              <div key={`${f.name}-${i}`} className="flex items-center gap-3 bg-gray-800/50 p-3 rounded-xl border border-gray-700">
-                                <FileText size={16} className="text-lime-500" />
-                                <span className="text-sm truncate flex-1">{f.name}</span>
-                                <CheckCircle2 size={16} className="text-emerald-500" />
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-
-                      <div className="mt-auto pt-12 flex justify-between items-center">
-                        <motion.button
-                          whileHover={{ scale: 1.02 }}
-                          whileTap={{ scale: 0.98 }}
-                          onClick={goToPrevStep}
-                          className="flex items-center gap-2 px-6 py-3 rounded-xl font-bold text-gray-400 hover:text-white transition-all bg-white/5 hover:bg-white/10"
-                          type="button"
-                        >
-                          <ChevronLeft size={20} /> Back
-                        </motion.button>
-                        <motion.button
-                          whileHover={{ scale: 1.05 }}
-                          whileTap={{ scale: 0.95 }}
-                          onClick={goToNextStep}
-                          className="flex items-center gap-2 bg-gradient-to-r from-lime-500 to-emerald-500 text-black px-8 py-3 rounded-xl font-black shadow-lg shadow-lime-500/20 hover:shadow-lime-500/40 transform hover:-translate-y-0.5"
-                          type="button"
-                        >
-                          Continue <ChevronRight size={20} strokeWidth={3} />
-                        </motion.button>
-                      </div>
-                    </div>
-
-                    {/* Right Side: Orion Guidance for Step 3 */}
-                    <motion.div
-                      initial={{ opacity: 0, x: 50 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ duration: 0.6, delay: 0.2 }}
-                      className="flex-1 xl:w-[45%] bg-gradient-to-br from-[#0D0D15] via-[#0A0A0E] to-[#050505] rounded-[2.5rem] p-6 sm:p-9 border border-white/[0.08] shadow-[0_20px_50px_rgba(0,0,0,0.5)] relative overflow-hidden group self-start sticky top-8"
-                    >
-                      <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-lime-500/5 rounded-full blur-[100px] -mr-48 -mt-48 transition-all duration-700 group-hover:bg-lime-500/10 pointer-events-none"></div>
-
-                      <div className="absolute top-8 right-8 w-32 h-32 rounded-full border-4 border-lime-500/30 overflow-hidden shadow-[0_0_50px_rgba(132,204,22,0.2)] z-20 hidden sm:block transition-all duration-700 group-hover:scale-110 group-hover:border-lime-500/50 group-hover:shadow-[0_0_60px_rgba(132,204,22,0.4)] bg-[#0A0A0E]">
-                        <img src={avatar} alt="Orion" className="w-full h-full object-top object-cover" />
-                      </div>
-
-                      <div className="relative z-10">
-                        <div className="mb-6 pr-48 text-left min-h-[140px]">
-                          <h3 className="text-xl sm:text-2xl font-bold text-white mb-3 tracking-tight">
-                            Almost there! Step 3 (Optional)
-                          </h3>
-                          <p className="text-gray-400 leading-relaxed text-sm max-w-xl">
-                            This step focuses on enriching your course with additional <span className="text-lime-400 font-bold">resources</span> and reference materials.
-                            <span className="block mt-2 text-amber-400/80 font-medium italic">Note: Once you proceed to the next step and begin generation, navigation to previous sections will be restricted to ensure architectural consistency.</span>
-                          </p>
-                        </div>
-
-                        <div className="h-px w-full bg-gradient-to-r from-lime-500/20 via-gray-700/50 to-transparent mb-6"></div>
-
-                        <h4 className="text-xs font-black text-white uppercase tracking-[0.15em] mb-6 flex items-center gap-2 pr-16">
-                          <span className="p-1.5 rounded bg-gray-800/80 border border-gray-700 shadow-sm text-sm">
-                            <Layers className="w-4 h-4 text-lime-400" />
-                          </span>
-                          Step-by-Step Guidance
-                        </h4>
-
-                        <motion.div
-                          variants={containerVariants}
-                          initial="hidden"
-                          animate="visible"
-                          className="space-y-6"
-                        >
-                          <motion.div variants={itemVariants} className="flex gap-4 group/item">
-                            <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gray-900 border border-gray-700 flex items-center justify-center text-sm font-black text-lime-400 shadow-inner group-hover/item:border-lime-500/50 transition-colors">1</div>
-                            <div>
-                              <h5 className="text-white font-bold text-sm mb-1.5 tracking-wide">Upload Supporting Files</h5>
-                              <p className="text-gray-400 text-xs leading-relaxed">Drag and drop or browse for PDF, DOCX, TXT, or Image files (JPG, PNG). These documents act as the primary knowledge base. My engine will ingest this content to ensure the generated course is accurate and factual.</p>
-                            </div>
-                          </motion.div>
-
-                          <motion.div variants={itemVariants} className="flex gap-4 group/item">
-                            <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gray-900 border border-gray-700 flex items-center justify-center text-sm font-black text-lime-400 shadow-inner group-hover/item:border-lime-500/50 transition-colors">2</div>
-                            <div>
-                              <h5 className="text-white font-bold text-sm mb-1.5 tracking-wide">Add Knowledge base (URLs)</h5>
-                              <p className="text-gray-400 text-xs leading-relaxed">Paste links to relevant articles or web pages. I will crawl these sources to add real-time context and diverse perspectives to your modules.</p>
-                            </div>
-                          </motion.div>
-
-                          <motion.div variants={itemVariants} className="flex gap-4 group/item">
-                            <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gray-900 border border-gray-700 flex items-center justify-center text-sm font-black text-lime-400 shadow-inner group-hover/item:border-lime-500/50 transition-colors">3</div>
-                            <div>
-                              <h5 className="text-white font-bold text-sm mb-1.5 tracking-wide">Next </h5>
-                              <p className="text-gray-400 text-xs leading-relaxed">Once resources are added, click 'Continue' to proceed to the course generation step.</p>
-                            </div>
-                          </motion.div>
-                        </motion.div>
-
-                        <div className="mt-8 p-4 rounded-xl bg-amber-500/5 border border-amber-500/10 backdrop-blur-sm relative overflow-hidden group-hover:bg-amber-500/10 transition-colors duration-500">
-                          <div className="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-amber-400 to-orange-600"></div>
-                          <div className="flex items-start gap-3 pl-2">
-                            <span className="text-amber-400 mt-0.5 text-lg"><Zap className="w-5 h-5" /></span>
-                            <div>
-                              <h6 className="text-amber-400 font-bold text-[11px] uppercase tracking-[0.2em] mb-1.5">Tip</h6>
-                              <p className="text-gray-300 text-xs italic opacity-90 leading-relaxed max-w-[90%]">
-                                Adding resources is optional, but it can significantly improve the quality, accuracy, and depth of your course.
-                                <span className="block mt-1 text-red-400 font-bold">Once you click 'Generate Modules', you cannot go back to change settings.</span>
-                              </p>
-                            </div>
-                          </div>
-                        </div>
-
-                      </div>
-                    </motion.div>
-                  </motion.div>
-                )}
-
                 {step === 4 && (
                   <motion.div
                     key="step4"
@@ -3545,16 +3323,7 @@ const CourseCreatorForm: React.FC = () => {
                             </div>
                           </div>
 
-                          <div className="mt-auto pt-8 flex justify-between">
-                            <motion.button
-                              whileHover={{ scale: 1.02 }}
-                              whileTap={{ scale: 0.98 }}
-                              onClick={() => { setHasBlueprint(false); setStep(3); }}
-                              className="flex items-center gap-2 px-6 py-3 rounded-xl font-bold text-gray-500 hover:text-white transition-all bg-white/5 hover:bg-white/10"
-                              type="button"
-                            >
-                              <ChevronLeft size={20} /> Back
-                            </motion.button>
+                          <div className="mt-auto pt-8 flex justify-end">
                             <motion.button
                               whileHover={{ scale: 1.05 }}
                               whileTap={{ scale: 0.95 }}
