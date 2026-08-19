@@ -27,7 +27,7 @@ function App() {
 
   // Modal State: 'none', 'forgot', 'reset'
   const [modalMode, setModalMode] = useState<'none' | 'forgot' | 'reset'>('none');
-  
+
   // Forgot password form state
   const [forgotEmail, setForgotEmail] = useState('');
   const [forgotIsLoading, setForgotIsLoading] = useState(false);
@@ -134,7 +134,7 @@ function App() {
           email: data.errors?.email,
         })
       }
-    } catch (error) {
+    } catch {
       setErrors({
         general: 'An error occurred. Please try again later.',
       });
@@ -166,7 +166,7 @@ function App() {
         body: JSON.stringify({ email: forgotEmail }),
       });
       const data = await response.json();
-      
+
       if (response.ok) {
         toast.success('Reset code generated successfully!');
         setForgotSuccessMessage(data.message || 'Reset link sent successfully!');
@@ -174,7 +174,7 @@ function App() {
       } else {
         setForgotError(data.message || 'Something went wrong. Please try again.');
       }
-    } catch (error) {
+    } catch {
       setForgotError('An error occurred. Please try again later.');
     } finally {
       setForgotIsLoading(false);
@@ -217,10 +217,10 @@ function App() {
       if (response.ok) {
         toast.success('Password reset successful! Please log in.');
         setResetSuccessMessage(data.message || 'Password reset successful!');
-        
+
         // Reset states
         setResetData({ email: '', token: '', newPassword: '', confirmPassword: '' });
-        
+
         // Close modal
         setTimeout(() => {
           setModalMode('none');
@@ -229,7 +229,7 @@ function App() {
       } else {
         setResetError(data.message || 'Invalid or expired token.');
       }
-    } catch (error) {
+    } catch {
       setResetError('An error occurred. Please try again later.');
     } finally {
       setResetIsLoading(false);
@@ -244,11 +244,11 @@ function App() {
           <div className="w-full max-w-4xl">
             <div className="flex flex-col gap-8 items-center">
               <div className="w-full">
-                <div className="mt-3 rounded-2xl bg-black shadow-2xl ring-1 ring-white/5 transition-transform duration-300 hover:shadow-2xl border border-white/5 flex flex-row">
-                  <div className="flex md:w-2/5 w-1/2 items-center justify-center p-6">
-                    <img src={HeroImage} alt="Avatar" className="max-w-[220px] max-h-[220px] w-auto h-auto rounded-xl object-contain" />
+                <div className="mt-3 rounded-2xl bg-black shadow-2xl ring-1 ring-white/5 transition-transform duration-300 hover:shadow-2xl border border-white/5 flex flex-col md:flex-row">
+                  <div className="flex md:w-2/5 w-full items-center justify-center p-6">
+                    <img src={HeroImage} alt="Avatar" className="max-w-[300px] max-h-[300px] md:max-w-[220px] md:max-h-[220px] w-auto h-auto rounded-xl object-contain" />
                   </div>
-                  <form onSubmit={handleSubmit} className="space-y-5 p-6 md:w-3/5 w-1/2">
+                  <form onSubmit={handleSubmit} className="space-y-5 p-6 md:w-3/5 w-full">
                     <div className="space-y-1">
                       <h2 className="text-3xl font-bold text-white">Welcome Back</h2>
                       <p className="text-sm text-white/70">Sign in to continue to your account.</p>
@@ -419,7 +419,7 @@ function App() {
                 onClick={() => setModalMode('none')}
                 className="absolute top-4 right-4 text-white/50 hover:text-white transition-colors"
               >
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-x"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-x"><path d="M18 6 6 18" /><path d="m6 6 12 12" /></svg>
               </button>
 
               {modalMode === 'forgot' ? (

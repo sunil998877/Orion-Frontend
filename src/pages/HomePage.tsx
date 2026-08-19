@@ -1,3 +1,5 @@
+
+
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Sparkles, Layout, Plus, Presentation, Headphones, BookOpen, Download, Music, Zap } from 'lucide-react';
@@ -48,23 +50,23 @@ const HomePage: React.FC = () => {
 
   return (
     <PageTransition>
-      <div className="space-y-8 animate-fade-in">
+      <div className="space-y-8 animate-fade-in  ">
         {/* Hero Section */}
-        <section className="relative w-full rounded-[2.5rem] overflow-hidden bg-[#0A0A0A] border border-white/5 shadow-2xl group isolate transition-all duration-700 hover:shadow-emerald-900/10">
-          <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 brightness-100 contrast-150 mix-blend-overlay" />
+        <section className="relative w-full rounded-[2.5rem] max-md:rounded-2xl overflow-hidden bg-[#0A0A0A] border border-white/5 shadow-2xl group isolate transition-all duration-700 hover:shadow-emerald-900/10">
+          <div className="absolute inset-0 opacity-20 brightness-100 contrast-150 mix-blend-overlay bg-[url('data:image/svg+xml,%3Csvg viewBox=%220 0 256 256%22 xmlns=%22http://www.w3.org/2000/svg%22%3E%3Cfilter id=%22n%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%220.9%22 numOctaves=%224%22 stitchTiles=%22stitch%22/%3E%3C/filter%3E%3Crect width=%22100%25%22 height=%22100%25%22 filter=%22url(%23n)%22/%3E%3C/svg%3E')]" />
           <div className="absolute top-0 right-0 w-[800px] h-[800px] bg-lime-500/10 blur-[150px] rounded-full pointer-events-none -translate-y-1/2 translate-x-1/3 opacity-50" />
           <div className="absolute bottom-0 left-0 w-[600px] h-[600px] bg-emerald-500/10 blur-[120px] rounded-full pointer-events-none translate-y-1/3 -translate-x-1/4 opacity-50" />
 
-          <div className="relative z-10 flex flex-col md:flex-row items-center md:items-end justify-between px-8 pt-12 pb-0 md:px-16 md:pt-16 gap-8 md:gap-12 min-h-[480px]">
-            <div className="relative flex-1 space-y-8 max-w-2xl text-center md:text-left pb-12 md:pb-20 self-center">
+          <div className="relative bottom-4 z-10 flex flex-col md:flex-row items-center md:items-end justify-between px-8 pt-12 pb-0 md:px-16 md:pt-16 gap-8 md:gap-12 min-h-[480px] max-md:px-4 max-md:pt-6 max-md:min-h-0">
+            <div className="relative flex-1 space-y-6 md:space-y-8 max-w-2xl text-center md:text-left pb-6 md:pb-20 self-center max-md:w-full">
               <div className="absolute -inset-10 bg-lime-500/5 blur-3xl rounded-full -z-10 pointer-events-none mix-blend-screen opacity-50" />
 
-              <div className="space-y-6">
+              <div className="space-y-4 md:space-y-6 relative">
                 <div className="inline-flex items-center px-4 py-1.5 rounded-full bg-white/5 border border-white/10 text-xs font-semibold tracking-wide text-lime-400 w-fit mx-auto md:mx-0 uppercase backdrop-blur-md shadow-lg shadow-lime-900/10">
                   <Sparkles className="w-3 h-3 mr-2" />
                   AI-Powered Learning
                 </div>
-                <h1 className="text-6xl md:text-8xl font-black text-white tracking-tighter leading-[0.9] mb-4">
+                <h1 className="text-3xl sm:text-4xl md:text-8xl font-black text-white tracking-tighter leading-[1.05] md:leading-[0.9] mb-2 md:mb-4">
                   Welcome back, <br className="hidden md:block" />
                   <span className="text-transparent bg-clip-text bg-[radial-gradient(ellipse_at_top_left,_var(--tw-gradient-stops))] from-lime-300 via-emerald-400 to-teal-500 animate-gradient-x px-1">
                     {username || 'Creator'}
@@ -108,7 +110,7 @@ const HomePage: React.FC = () => {
               </div>
             </div>
 
-            <div className="relative shrink-0 w-full md:w-auto flex justify-center md:justify-end">
+            <div className="shrink-0 w-full md:w-auto flex justify-center md:justify-end">
               <div className="relative w-[320px] md:w-[480px] h-[400px] md:h-[500px] flex items-end justify-center perspective-[1200px] group/scene">
                 <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-3/4 h-full bg-gradient-to-t from-lime-500/10 via-emerald-500/5 to-transparent blur-3xl opacity-60 pointer-events-none mix-blend-screen" />
                 <div
@@ -201,7 +203,7 @@ const HomePage: React.FC = () => {
         </section>
 
         {/* Premium CTA Section */}
-        <div className="relative overflow-hidden rounded-[2.5rem] bg-[#0F0F0F] border border-white/10 p-12 text-center md:text-left flex flex-col md:flex-row items-center justify-between gap-10 group">
+        <div className="relative overflow-hidden rounded-[2.5rem] max-md:rounded-2xl bg-[#0F0F0F] border border-white/10 p-12 max-md:p-6 text-center md:text-left flex flex-col md:flex-row items-center justify-between gap-10 group">
           <div className="absolute inset-0 bg-gradient-to-r from-lime-500/5 to-emerald-500/5 opacity-50" />
           <div className="absolute top-0 right-0 w-96 h-96 bg-emerald-500/10 blur-[100px] rounded-full translate-x-1/2 -translate-y-1/2" />
           <div className="relative z-10 max-w-2xl space-y-4">
@@ -237,10 +239,10 @@ const HomePage: React.FC = () => {
           variants={containerVariants}
           initial="hidden"
           animate="visible"
-          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 pb-12"
+          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-md:gap-4 pb-12"
         >
           {/* Card 1: User Guidance */}
-          <motion.div variants={itemVariants} className="group relative p-8 rounded-3xl bg-gray-900/40 backdrop-blur-xl border border-white/5 hover:border-fuchsia-500/30 transition-all duration-500 hover:-translate-y-2 hover:shadow-[0_20px_40px_-15px_rgba(217,70,239,0.1)] overflow-hidden">
+          <motion.div variants={itemVariants} className="group relative p-8 max-md:p-5 rounded-3xl bg-gray-900/40 backdrop-blur-xl border border-white/5 hover:border-fuchsia-500/30 transition-all duration-500 hover:-translate-y-2 hover:shadow-[0_20px_40px_-15px_rgba(217,70,239,0.1)] overflow-hidden">
             <div className="absolute inset-0 bg-gradient-to-br from-fuchsia-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
             <div className="relative z-10">
               <div className="w-14 h-14 bg-gradient-to-br from-fuchsia-500/20 to-purple-500/10 rounded-2xl flex items-center justify-center mb-6 ring-1 ring-white/10 group-hover:scale-110 transition-transform duration-500">
@@ -254,7 +256,7 @@ const HomePage: React.FC = () => {
           </motion.div>
 
           {/* Card 2: Slide Generation */}
-          <motion.div variants={itemVariants} className="group relative p-8 rounded-3xl bg-gray-900/40 backdrop-blur-xl border border-white/5 hover:border-lime-500/30 transition-all duration-500 hover:-translate-y-2 hover:shadow-[0_20px_40px_-15px_rgba(132,204,22,0.1)] overflow-hidden">
+          <motion.div variants={itemVariants} className="group relative p-8 max-md:p-5 rounded-3xl bg-gray-900/40 backdrop-blur-xl border border-white/5 hover:border-lime-500/30 transition-all duration-500 hover:-translate-y-2 hover:shadow-[0_20px_40px_-15px_rgba(132,204,22,0.1)] overflow-hidden">
             <div className="absolute inset-0 bg-gradient-to-br from-lime-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
             <div className="relative z-10">
               <div className="w-14 h-14 bg-gradient-to-br from-lime-500/20 to-emerald-500/10 rounded-2xl flex items-center justify-center mb-6 ring-1 ring-white/10 group-hover:scale-110 transition-transform duration-500">
@@ -268,7 +270,7 @@ const HomePage: React.FC = () => {
           </motion.div>
 
           {/* Card 3: PPTX Downloads */}
-          <motion.div variants={itemVariants} className="group relative p-8 rounded-3xl bg-gray-900/40 backdrop-blur-xl border border-white/5 hover:border-rose-500/30 transition-all duration-500 hover:-translate-y-2 hover:shadow-[0_20px_40px_-15px_rgba(244,63,94,0.1)] overflow-hidden">
+          <motion.div variants={itemVariants} className="group relative p-8 max-md:p-5 rounded-3xl bg-gray-900/40 backdrop-blur-xl border border-white/5 hover:border-rose-500/30 transition-all duration-500 hover:-translate-y-2 hover:shadow-[0_20px_40px_-15px_rgba(244,63,94,0.1)] overflow-hidden">
             <div className="absolute inset-0 bg-gradient-to-br from-rose-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
             <div className="relative z-10">
               <div className="w-14 h-14 bg-gradient-to-br from-rose-500/20 to-pink-500/10 rounded-2xl flex items-center justify-center mb-6 ring-1 ring-white/10 group-hover:scale-110 transition-transform duration-500">
@@ -282,7 +284,7 @@ const HomePage: React.FC = () => {
           </motion.div>
 
           {/* Card 4: Audiobooks */}
-          <motion.div variants={itemVariants} className="group relative p-8 rounded-3xl bg-gray-900/40 backdrop-blur-xl border border-white/5 hover:border-indigo-500/30 transition-all duration-500 hover:-translate-y-2 hover:shadow-[0_20px_40px_-15px_rgba(99,102,241,0.1)] overflow-hidden">
+          <motion.div variants={itemVariants} className="group relative p-8 max-md:p-5 rounded-3xl bg-gray-900/40 backdrop-blur-xl border border-white/5 hover:border-indigo-500/30 transition-all duration-500 hover:-translate-y-2 hover:shadow-[0_20px_40px_-15px_rgba(99,102,241,0.1)] overflow-hidden">
             <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
             <div className="relative z-10">
               <div className="w-14 h-14 bg-gradient-to-br from-indigo-500/20 to-violet-500/10 rounded-2xl flex items-center justify-center mb-6 ring-1 ring-white/10 group-hover:scale-110 transition-transform duration-500">
@@ -296,7 +298,7 @@ const HomePage: React.FC = () => {
           </motion.div>
 
           {/* Card 5: Voice Scripts */}
-          <motion.div variants={itemVariants} className="group relative p-8 rounded-3xl bg-gray-900/40 backdrop-blur-xl border border-white/5 hover:border-cyan-500/30 transition-all duration-500 hover:-translate-y-2 hover:shadow-[0_20px_40px_-15px_rgba(6,182,212,0.1)] overflow-hidden">
+          <motion.div variants={itemVariants} className="group relative p-8 max-md:p-5 rounded-3xl bg-gray-900/40 backdrop-blur-xl border border-white/5 hover:border-cyan-500/30 transition-all duration-500 hover:-translate-y-2 hover:shadow-[0_20px_40px_-15px_rgba(6,182,212,0.1)] overflow-hidden">
             <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
             <div className="relative z-10">
               <div className="w-14 h-14 bg-gradient-to-br from-cyan-500/20 to-sky-500/10 rounded-2xl flex items-center justify-center mb-6 ring-1 ring-white/10 group-hover:scale-110 transition-transform duration-500">
@@ -310,7 +312,7 @@ const HomePage: React.FC = () => {
           </motion.div>
 
           {/* Card 6: Ebooks */}
-          <motion.div variants={itemVariants} className="group relative p-8 rounded-3xl bg-gray-900/40 backdrop-blur-xl border border-white/5 hover:border-amber-500/30 transition-all duration-500 hover:-translate-y-2 hover:shadow-[0_20px_40px_-15px_rgba(245,158,11,0.1)] overflow-hidden">
+          <motion.div variants={itemVariants} className="group relative p-8 max-md:p-5 rounded-3xl bg-gray-900/40 backdrop-blur-xl border border-white/5 hover:border-amber-500/30 transition-all duration-500 hover:-translate-y-2 hover:shadow-[0_20px_40px_-15px_rgba(245,158,11,0.1)] overflow-hidden">
             <div className="absolute inset-0 bg-gradient-to-br from-amber-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
             <div className="relative z-10">
               <div className="w-14 h-14 bg-gradient-to-br from-amber-500/20 to-orange-500/10 rounded-2xl flex items-center justify-center mb-6 ring-1 ring-white/10 group-hover:scale-110 transition-transform duration-500">
@@ -339,3 +341,4 @@ const HomePage: React.FC = () => {
 };
 
 export default HomePage;
+

@@ -5,7 +5,7 @@
 /* BASE  */
 body {
   @apply text-gray-900 antialiased;
-  background-image: url('/src/assests/background2.jpg');
+  background: linear-gradient(135deg, #0f172a 0%, #1e293b 45%, #162447 100%);
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;

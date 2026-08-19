@@ -1,7 +1,5 @@
-import React, { useEffect, useState } from 'react';
-const SlideVeiwer = () => {
+const SlideViewer = () => {
+  return null;
+};
 
-    useEffect(() => {
-
-    })
-}
+export default SlideViewer;

@@ -39,7 +39,7 @@ export function setupAuthInterceptor() {
         if (response.status === 401 && data && data.message === "Session expired. Logged in from another device.") {
           isSingleSessionError = true;
         }
-      } catch (err) {
+      } catch {
         // Fall back to general auth error
       }
 

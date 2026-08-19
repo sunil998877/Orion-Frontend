@@ -12,6 +12,12 @@ const AnalyticsPage: React.FC = () => {
   const [buckets, setBuckets] = useState<{ label: string; count: number }[]>([]);
   const [loading, setLoading] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [chartReady, setChartReady] = useState(false);
+
+  useEffect(() => {
+    const id = requestAnimationFrame(() => setChartReady(true));
+    return () => cancelAnimationFrame(id);
+  }, []);
 
   // Theme logic
   const theme = useMemo(() => {
@@ -96,7 +102,7 @@ const AnalyticsPage: React.FC = () => {
         <div className="space-y-10 pb-20">
 
           {/* Futurstic Hero Header */}
-          <div className="relative rounded-[2.5rem] bg-gray-900/40 border border-white/10 backdrop-blur-2xl p-8 md:p-12 overflow-hidden shadow-2xl group">
+          <div className="relative rounded-[2.5rem] max-md:rounded-2xl bg-gray-900/40 border border-white/10 backdrop-blur-2xl p-8 md:p-12 max-md:p-5 overflow-hidden shadow-2xl group">
             {/* Subtle Inner Glow */}
             <div className="absolute inset-0 bg-gradient-to-r from-lime-500/10 via-transparent to-transparent opacity-30 group-hover:opacity-40 transition-opacity duration-700" />
             <div className="absolute -right-20 -top-20 w-96 h-96 bg-lime-500/10 rounded-full blur-[80px]" />
@@ -108,7 +114,7 @@ const AnalyticsPage: React.FC = () => {
                   <Activity className="w-3 h-3 mr-2" />
                   Live Dashboard
                 </div>
-                <h1 className="text-4xl md:text-5xl font-extrabold text-white tracking-tight">
+                <h1 className="text-3xl md:text-5xl font-extrabold text-white tracking-tight">
                   Analytics Overview
                 </h1>
                 <p className="text-lg text-gray-400 max-w-xl leading-relaxed">
@@ -224,7 +230,7 @@ const AnalyticsPage: React.FC = () => {
                       />
 
                       {/* Signal Noise Texture */}
-                      <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 mix-blend-overlay brightness-150" />
+                      <div className="absolute inset-0 opacity-20 mix-blend-overlay brightness-150 bg-[url('data:image/svg+xml,%3Csvg viewBox=%220 0 256 256%22 xmlns=%22http://www.w3.org/2000/svg%22%3E%3Cfilter id=%22n%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%220.9%22 numOctaves=%224%22 stitchTiles=%22stitch%22/%3E%3C/filter%3E%3Crect width=%22100%25%22 height=%22100%25%22 filter=%22url(%23n)%22/%3E%3C/svg%3E')]" />
 
                       {/* Ghost/Bloom Layer */}
                       <img
@@ -310,8 +316,8 @@ const AnalyticsPage: React.FC = () => {
                   <div className="w-10 h-10 border-4 border-lime-500/30 border-t-lime-500 rounded-full animate-spin" />
                   <p className="text-sm font-medium tracking-widest uppercase">Loading Data...</p>
                 </div>
-              ) : (
-                <ResponsiveContainer width="100%" height="100%">
+              ) : chartReady ? (
+                <ResponsiveContainer width="100%" height="100%" minWidth={0} debounce={50}>
                   <BarChart data={buckets} margin={{ top: 20, right: 0, left: -20, bottom: 40 }}>
                     <defs>
                       <linearGradient id="barGradient" x1="0" y1="0" x2="0" y2="1">
@@ -349,7 +355,7 @@ const AnalyticsPage: React.FC = () => {
                     />
                   </BarChart>
                 </ResponsiveContainer>
-              )}
+              ) : null}
             </div>
           </div>
         </div>

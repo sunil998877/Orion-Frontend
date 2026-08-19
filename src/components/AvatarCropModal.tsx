@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { X, Upload, Camera, Check, Loader2 } from 'lucide-react';
+import { X, Upload, Camera, Check } from 'lucide-react';
 
 interface AvatarCropModalProps {
   open: boolean;

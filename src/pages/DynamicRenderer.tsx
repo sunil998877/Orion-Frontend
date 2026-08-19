@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 
 interface ContentRendererProps {
   content: string;
@@ -8,10 +8,6 @@ interface ContentRendererProps {
 export const DynamicRenderer: React.FC<ContentRendererProps> = ({ content, className = '' }) => {
   const detectContentType = (text: string): 'markdown' | 'json' | 'code' | 'plain' => {
     const trimmed = (text || '').trim();
-    const [Output, setOutput] = useState('')
-    console.log(detectContentType);
-
-
     // Check for JSON
     if ((trimmed.startsWith('{') && trimmed.endsWith('}')) ||
       (trimmed.startsWith('[') && trimmed.endsWith(']'))) {
@@ -32,7 +28,7 @@ export const DynamicRenderer: React.FC<ContentRendererProps> = ({ content, class
       return 'code';
     }
 
-    // Check for markdown patterns
+
     if (/^#{1,6}\s/.test(trimmed) ||
       /\*\*.*\*\*/.test(trimmed) ||
       /^\d+\.\s/m.test(trimmed) ||
@@ -49,7 +45,6 @@ export const DynamicRenderer: React.FC<ContentRendererProps> = ({ content, class
     try {
       const parsed = JSON.parse(jsonString);
       const formatted = JSON.stringify(parsed, null, 2);
-      console.log(formatted)
 
       return (
         <div className="mb-4">

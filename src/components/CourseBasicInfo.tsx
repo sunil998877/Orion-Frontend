@@ -158,7 +158,7 @@ const CourseBasicInfo: React.FC = () => {
             <option key={ind} value={ind}>{ind}</option>
           ))}
         </select>
-        
+
         {showCustomIndustry && (
           <input
             type="text"

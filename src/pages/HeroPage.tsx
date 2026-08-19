@@ -108,7 +108,7 @@ export const HeroPage: React.FC = () => {
         const q = searchParams.get('q');
         const url = q
           ? `${API_BASE}/courses/search?q=${encodeURIComponent(q)}`
-          : `${API_BASE}/courses/me`;
+          : `${API_BASE}/courses/get-user-courses`;
         const resp = await fetch(url, {
           headers: { Authorization: `Bearer ${token}` }
         });
@@ -141,7 +141,7 @@ export const HeroPage: React.FC = () => {
   const [audioProgress, setAudioProgress] = useState(0);
   const [showAudioPlayer, setShowAudioPlayer] = useState(false);
   const [showTranscript, setShowTranscript] = useState(false);
-  
+
   // Podcast States
   const [isGeneratingPodcast, setIsGeneratingPodcast] = useState(false);
   const [podcastProgress, setPodcastProgress] = useState(0);
@@ -210,17 +210,17 @@ export const HeroPage: React.FC = () => {
         setPodcastProgress(100);
 
         setTimeout(() => {
-          setCourseData(prev => ({ 
-            ...prev, 
-            podcastUrl: data.podcastUrl, 
+          setCourseData(prev => ({
+            ...prev,
+            podcastUrl: data.podcastUrl,
             podcastScript: data.podcastScript,
-            podcastTranscript: data.podcastTranscript 
+            podcastTranscript: data.podcastTranscript
           }));
-          setCourses(prev => prev.map(c => (c._id === courseId || c.courseId === courseId) ? { 
-            ...c, 
-            podcastUrl: data.podcastUrl, 
+          setCourses(prev => prev.map(c => (c._id === courseId || c.courseId === courseId) ? {
+            ...c,
+            podcastUrl: data.podcastUrl,
             podcastScript: data.podcastScript,
-            podcastTranscript: data.podcastTranscript 
+            podcastTranscript: data.podcastTranscript
           } : c));
           setIsGeneratingPodcast(false);
           toast.success('Podcast generated successfully!');
@@ -515,7 +515,7 @@ export const HeroPage: React.FC = () => {
     try {
       const token = localStorage.getItem('token');
       if (!token) return;
-      const resp = await fetch(`${API_BASE}/courses/${courseId}`, {
+      const resp = await fetch(`${API_BASE}/courses/delete-course/${courseId}`, {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -1082,30 +1082,27 @@ export const HeroPage: React.FC = () => {
                                 courseData.podcastScript.map((turn, index) => {
                                   const isActive = index === getActivePodcastBubbleIndex();
                                   const isHostA = turn.speaker.toLowerCase().includes('hosta') || turn.speaker.toLowerCase().includes('alex');
-                                  
+
                                   return (
                                     <div
                                       key={index}
-                                      className={`flex gap-4 items-start transition-all duration-300 ${
-                                        isHostA ? 'justify-start' : 'justify-end'
-                                      }`}
+                                      className={`flex gap-4 items-start transition-all duration-300 ${isHostA ? 'justify-start' : 'justify-end'
+                                        }`}
                                     >
                                       {isHostA && (
                                         <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-400 to-indigo-600 flex-shrink-0 flex items-center justify-center border border-blue-400/30 text-white font-black text-xs shadow-md">
                                           AL
                                         </div>
                                       )}
-                                      
+
                                       <div
-                                        className={`max-w-[70%] rounded-2xl px-5 py-3.5 transition-all duration-500 relative ${
-                                          isHostA
-                                            ? 'bg-slate-800/60 border border-slate-700/50 text-slate-100'
-                                            : 'bg-emerald-950/50 border border-emerald-500/20 text-emerald-100'
-                                        } ${
-                                          isActive
+                                        className={`max-w-[70%] rounded-2xl px-5 py-3.5 transition-all duration-500 relative ${isHostA
+                                          ? 'bg-slate-800/60 border border-slate-700/50 text-slate-100'
+                                          : 'bg-emerald-950/50 border border-emerald-500/20 text-emerald-100'
+                                          } ${isActive
                                             ? 'ring-2 ring-lime-400 border-lime-400/50 shadow-[0_0_20px_rgba(132,204,22,0.3)] scale-[1.02]'
                                             : ''
-                                        }`}
+                                          }`}
                                       >
                                         <div className="flex justify-between items-center gap-2 mb-1">
                                           <span className="text-[10px] uppercase tracking-widest font-black opacity-60">
@@ -1330,3 +1327,6 @@ export const HeroPage: React.FC = () => {
     </PageTransition>
   );
 };
+
+
+export default HeroPage;
